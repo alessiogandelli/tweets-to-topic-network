@@ -11,7 +11,9 @@ from igraph import Graph
 
 path = '/Volumes/boot420/Users/data/climate_network/cop22/'
 file_user = 'users_cop22.csv'
-file_tweets = 'tweets_cop22.csv'
+file_tweets = 'tweets_cop22.pkl'
+
+df_tweets = pd.read_pickle(os.path.join(path,file_tweets))
 # %%
 df_user = pd.read_csv(os.path.join(path,file_user), index_col=0)
 # unnamed: 0 is id 
