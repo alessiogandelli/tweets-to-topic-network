@@ -7,27 +7,29 @@ import re
 from bertopic import BERTopic
 from sklearn.feature_extraction.text import CountVectorizer
 from bertopic.vectorizers import ClassTfidfTransformer
-import openai
+#import openai
 from dotenv import load_dotenv
 
 
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+#openai.api_key = os.getenv("OPENAI_API_KEY")
 #%%
+path = '/Volumes/boot420/Users/data/climate_network/cop22/'
+file_user = 'users_cop22.csv'
+file_tweets = 'tweets_cop22.pkl'
 
-path = '/Users/alessiogandelli/dev/internship/data'
-
-cop27 = pd.read_csv(os.path.join(path, 'cop27_tw.csv'),  lineterminator='\n')
+# read pickle file
+cop = pd.read_pickle(os.path.join(path,file_tweets))
 
 #%%
 # only english 
-cop27 = cop27[cop27['lang'] == 'en']
-#has media no 
-cop27 = cop27[cop27['has_media'] == 'N']
-# remove retweets ( if starts euth RT)
-cop27 = cop27[~cop27['text'].str.startswith('RT')]
+cop = cop[cop['lang'] == 'en']
 
-docs = cop27['text'].tolist()
+# remove retweets ( if starts euth RT)
+cop = cop[~cop['text'].str.contains('RT')]
+cop = cop[cop['referenced_type'].isna()]
+
+docs = cop['text'].tolist()
 # remove urls
 docs = [re.sub(r"http\S+", "", doc) for doc in docs]
 
@@ -46,11 +48,22 @@ model = BERTopic(
 topics ,probs = model.fit_transform(docs)
 
 
-#%%
-# sample 2000 docs 
-sample = np.random.choice(docs, 2000, replace=False)
-# %%
 
+
+#%%
+cop['topics'] = topics
+
+cop.to_pickle(os.path.join(path,'tweets_cop22_topics.pkl'))
+
+model.get_topic_info().to_csv(os.path.join(path,'topics_cop22.csv'))
+
+
+
+
+
+
+
+#%%
 
 def get_topics_label(model):
 
