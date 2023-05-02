@@ -63,6 +63,8 @@ model.get_topic_info().to_csv(os.path.join(path,'topics_cop22.csv'))
 
 
 
+
+
 #%%
 
 def get_topics_label(model):

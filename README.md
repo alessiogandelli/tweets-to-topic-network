@@ -24,3 +24,16 @@ TODO
 topic modeling and multilayer network 
 
 one layer per topic 
+
+# to understand 
+
+cop22 
+number of tweets = 768174
+number of tweets that are not retweets =  180926
+number of tweets that are not retweets but contains RT in the text = 12019
+number of tweets that are not retweets but contains RT from pablorodas = 6639
+
+
+number of retweets = 587248
+number of referenced tweets = 104368
+number of refereenced tweets that we do not have =  14403
