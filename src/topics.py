@@ -29,33 +29,41 @@ cop = cop[cop['lang'] == 'en']
 cop = cop[~cop['text'].str.contains('RT')]
 cop = cop[cop['referenced_type'].isna()]
 
-docs = cop['text'].tolist()
-# remove urls
-docs = [re.sub(r"http\S+", "", doc) for doc in docs]
+
+def get_topics(df_cop):
+    docs = df_cop['text'].tolist()
+
+    docs = [re.sub(r"http\S+", "", doc) for doc in docs]
+
+
+
+    vectorizer_model = CountVectorizer(stop_words="english")
+    ctfidf_model = ClassTfidfTransformer(reduce_frequent_words=True)
+    model = BERTopic( 
+                        vectorizer_model =   vectorizer_model,
+                        ctfidf_model      =   ctfidf_model,
+                        nr_topics        =  'auto',
+                        min_topic_size   =   100,
+                    )
+
+    topics ,probs = model.fit_transform(docs)
+    df_cop['topics'] = topics
+
+    #cop.to_pickle(os.path.join(path,'tweets_cop22_topics.pkl'))
+    #model.get_topic_info().to_csv(os.path.join(path,'topics_cop22.csv'))
+
+
+
+    return df_cop
+
+
+
+
 
 #%%
+#cop['topics'] = topics
 
 
-vectorizer_model = CountVectorizer(stop_words="english")
-ctfidf_model = ClassTfidfTransformer(reduce_frequent_words=True)
-model = BERTopic( 
-                    vectorizer_model =   vectorizer_model,
-                    ctfidf_model      =   ctfidf_model,
-                    nr_topics        =  'auto',
-                    min_topic_size   =   100,
-                )
-
-topics ,probs = model.fit_transform(docs)
-
-
-
-
-#%%
-cop['topics'] = topics
-
-cop.to_pickle(os.path.join(path,'tweets_cop22_topics.pkl'))
-
-model.get_topic_info().to_csv(os.path.join(path,'topics_cop22.csv'))
 
 
 

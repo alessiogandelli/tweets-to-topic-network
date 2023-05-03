@@ -21,14 +21,21 @@ df_tweets = pd.read_pickle(os.path.join(path,file_tweets))
 
 # do reference id is present in the index
 df_original = df_tweets[df_tweets['referenced_id'].isna()]
-df_retweets = df_tweets[~df_tweets['referenced_id'].isna()]
+
+df_retweets = df_tweets[df_tweets['referenced_type'] == 'retweeted']
+df_quotes = df_tweets[df_tweets['referenced_type'] == 'quoted']
+df_reply = df_tweets[df_tweets['referenced_type'] == 'replied_to']
 #df_retweets = df_retweets[~df_retweets['referenced_id'].apply(lambda x: x if x in df_tweets.index else None).isna()]
 
 # fake topic 0 or 1 
 df_original['topic'] = [0 if i % 2 == 0 else 1 for i in range(len(df_original))]
 df_retweets['topic'] = df_retweets['referenced_id']
+df_quotes['topic'] = df_quotes['referenced_id']
+df_reply['topic'] = df_reply['referenced_id']
 
-df_tweets = pd.concat([df_original, df_retweets])
+df_tweets_retweet = pd.concat([df_original, df_retweets])
+df_tweets_quote = pd.concat([df_original, df_quotes])
+df_tweets_reply = pd.concat([df_original, df_reply])
 t = {}
 
 #%%
@@ -76,7 +83,6 @@ def create_network(df_tweets):
     nodes_to_set = [node for node in g.nodes if 'bipartite' not in g.nodes[node]]
     [g.nodes[node].setdefault('bipartite', 0) for node in nodes_to_set]
 
-    print('new nodes added', c)
 
     nx.set_edge_attributes(g, t, 'date')
     nx.set_node_attributes(g, x, 'text')
@@ -86,111 +92,23 @@ def create_network(df_tweets):
     return (g, x , t)
 
 
-g,x,t = create_network(df_tweets)
+gr ,xr ,tr = create_network(df_tweets_retweet)
+gq ,xq ,tq = create_network(df_tweets_quote)
+grt ,xrt ,trt = create_network(df_tweets_retweet)
  
 # %%
+
+
+## export to gml 
+nx.write_gml(gr, os.path.join(path,'cop22_retweet.gml'))
+nx.write_gml(gq, os.path.join(path,'cop22_quote.gml'))
+nx.write_gml(grt, os.path.join(path,'cop22_reply.gml'))
 
 # get all nodes of type 1 (tweets) that have put degree = 0
 # this means that they are not referenced by any other tweet
 
-original = [i for i in g.nodes if g.nodes[i]['bipartite'] == 1 and g.out_degree(i) == 0]
-original_text = [x.get(a) for a in original]
-
-# count original_text that continais RT
-len([i for i in original_text if 'RT' in i])
-
-
-
-orig = df_tweets[df_tweets['referenced_type'].isna()]
-pablo = orig[orig['author'] == '52119056']
-pablo['text'].str.contains('RT').value_counts()
-orig['text'].str.contains('RT').value_counts()
-
-retweets = df_tweets[~df_tweets['referenced_id'].isna()]['referenced_id'].to_list()
-
-referenced = set(retweets)
-pd.Series([x.get(t) for t in referenced]).isna().value_counts()
-pd.Series([x.get(t) for t in retweets]).isna().value_counts()
-#%%
-# find referenced id that are also in the index of df_tweets
-df_retweets['referenced_id'].apply(lambda x: x if x in df_tweets.index else None)
-
-
-
-#%%
-# degree analysis 
-
-degree = {i:g.degree(i) for i in g.nodes}
-degree = pd.DataFrame.from_dict(degree, orient='index')
-degree.columns = ['degree']
-degree['bipartite'] = [g.nodes[i]['bipartite'] for i in degree.index]
-degree['degree'] = degree['degree'].astype(int)
-degree['bipartite'] = degree['bipartite'].astype(int)
-degree['indegree'] = [g.in_degree(i) for i in degree.index]
-degree['outdegree'] = [g.out_degree(i) for i in degree.index]
-top_users = degree[degree['bipartite'] == 0].sort_values(['degree', 'bipartite'], ascending=False).head(20) 
-top_tweets = degree[degree['bipartite'] == 1].sort_values(['degree', 'bipartite'], ascending=False).head(20)
-
-
-
-
-#%%
-# descriptive stats of the graph
-# number of nodes
-print('number of nodes', g.number_of_nodes())
-# number of nodes of bipartite 1 
-print('number of tweets', len([i for i in g.nodes if g.nodes[i]['bipartite']==1]))
-print('number of users', len([i for i in g.nodes if g.nodes[i]['bipartite']==0]))
-# number of retweets
-print('number of retweets', g.number_of_edges() - len([i for i in g.nodes if g.nodes[i]['bipartite']==1]))
-# average degree
-print('average degree', np.mean([g.degree(i) for i in g.nodes]))
-
-# indegree of users 
-
-
-
-
-#%%
-gg = g.copy()
-# #remove all nodes 0 that have out degree 1
-gg.remove_nodes_from([n for n in gg if gg.degree(n) < 100 and gg.nodes[n]['bipartite']==0])
-# # remove nodes 1 that have in degree 0
-gg.remove_nodes_from([n for n in gg if gg.degree(n) < 200 ])
-
-
-#%%
-# plot graph 
-color = [0 if gg.nodes[i]['bipartite']==0 else 1 for i in gg.nodes]
-pos = nx.bipartite_layout(gg,df_tweets.index)
-pos = nx.spring_layout(gg, k = 0.07)
-#pos = nx.multipartite_layout(g, subset_key='bipartite')
-nx.draw(gg, with_labels=False, pos = pos, node_size = 4, node_color = color, width = 0.1)
-plt.show()
-
 
 # %%
-topic = 1
 
-# get only the nodes of the topic
-
-tweets = [i for i in g.nodes if g.nodes[i]['bipartite'] == 1 and g.nodes[i]['topics'] == topic]
-users = [i for i in g.nodes if g.nodes[i]['bipartite'] == 0]
-
-sub = g.subgraph(tweets + users)
-users = [n for n in sub if sub.degree(n) != 0 and sub.nodes[n]['bipartite']==0]
-
-sub = sub.subgraph(users + tweets)
-
-# remove user nodes with degree 0
-# %%
-
-# plot graph
-color = [0 if sub.nodes[i]['bipartite']==0 else 1 for i in sub.nodes]
-pos = nx.bipartite_layout(sub,df_tweets.index)
-pos = nx.spring_layout(sub, k = 0.07)
-#pos = nx.multipartite_layout(g, subset_key='bipartite')
-nx.draw(sub, with_labels=False, pos = pos, node_size = 4, node_color = color, width = 0.1)
-plt.show()
 
 # %%
