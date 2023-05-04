@@ -1,7 +1,14 @@
 # climate-networks
+# how to run 
+open a terminal and run 
+```
+make run tweet_file=url user_file=url
+```
+```
+
 
 # data
-first step was to transform the json in csv removing all non necesary information and saving much more space and having the possibility to use tabular data.
+First step was to transform the json in csv removing all non necessary information and saving much more space and having the possibility to use tabular data.
 This process is in the data file, the output is a csv with the users and one with the tweets. Moreover the tweet file has been also saved in a pickle file to be able to load it faster.
 
 # network 
