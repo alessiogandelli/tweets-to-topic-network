@@ -149,9 +149,9 @@ class Pipeline:
         return df_cop
 
 
-    def create_network(self, df_tweets):
+    def create_network(self, df_tweets, title):
 
-        print('create network' + self.name)
+        print('create network ' + self.name)
        
         A = df_tweets['author_name'].unique() # actors
         M = df_tweets.index                   # tweets 
@@ -199,7 +199,7 @@ class Pipeline:
         nx.set_node_attributes(g, x, 'text')
         nx.set_node_attributes(g, topics, 'topics')
 
-        nx.write_gml(g, os.path.join(self.path, 'networks', self.name+'.gml'))
+        nx.write_gml(g, os.path.join(self.path, 'networks', self.name+title+'.gml'))
 
 
         return (g, x , t)
