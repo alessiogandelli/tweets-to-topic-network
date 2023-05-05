@@ -13,8 +13,63 @@ os.environ['TOKENIZERS_PARALLELISM'] = 'false' # to avoid a warning
 
 #%%
 class Pipeline:
+    """
+    A class used to represent the entire pipeline from json to graph
+
+    ...
+    Attributes
+    ----------
+    file_tweets : str
+        path to the json file containing the tweets
+    file_user : str
+        path to the json file containing the users
+    path : str
+        path to the folder containing the json files
+    path_cache : str
+        path to the folder containing the cache files
+    name : str
+        name of the folder
+    df_tweets : pandas.DataFrame
+        dataframe containing all the tweets
+    df_original : pandas.DataFrame
+        dataframe containing all the tweets that are not retweets, quotes or replies
+    df_original_labeled : pandas.DataFrame
+        dataframe containing all the tweets that are not retweets, quotes or replies and are labeled with the topic
+    df_retweets : pandas.DataFrame
+        dataframe containing all the retweets
+    df_retweets_labeled : pandas.DataFrame
+        dataframe containing all tweets and retweets and are labeled with the topic 
+    df_quotes : pandas.DataFrame
+        dataframe containing all the quotes
+    df_quotes_labeled : pandas.DataFrame
+        dataframe containing all tweets and quotes and are labeled with the topic
+    df_reply : pandas.DataFrame
+        dataframe containing all the replies
+    df_reply_labeled : pandas.DataFrame
+        dataframe containing all tweets and replies and are labeled with the topic
+
+    Methods
+    -------
+    process_json()
+        process the json files and create the dataframes
+    get_topics()
+        get the topics of the original tweets
+    create_network(df -> pandas.DataFrame, title -> str)
+        create the network of the given dataset and save in gml format in the network folder
+
+    """
 
     def __init__(self,  file_tweets, file_user):
+        """
+
+        Parameters
+        ----------
+        file_tweets : str
+            path to the json file containing the tweets
+        file_user : str
+            path to the json file containing the users
+        """
+
         self.file_user = file_user
         self.file_tweets = file_tweets
         self.path = file_tweets.split('/')[:-1]
@@ -36,22 +91,26 @@ class Pipeline:
 
 
     def process_json(self):
-        users = {}
+        """
+        Process the json files and create the dataframes
+
+        """
         file = os.path.join(self.path_cache,'tweets_'+self.name+'.pkl')
-        
-        with jsonlines.open(self.file_user) as reader: # open file
-            for obj in reader:
-                users[obj['id']] = {'username': obj['username'], 'tweet_count': obj['public_metrics']['tweet_count'], 'followers' : obj['public_metrics']['followers_count'], 'following' : obj['public_metrics']['following_count']}
 
-        df_user = pd.DataFrame(users).T
-
-
-        # if at path there is the file tweets_cop22
+        # if pkl file tweets_cop22 exists, load it
         if os.path.exists(file):
             print('using cached file for json processing')
             df_tweets = pd.read_pickle(file)
             
         else:
+            print('looking into users json file')
+            users = {}
+            with jsonlines.open(self.file_user) as reader: # open file
+                for obj in reader:
+                    users[obj['id']] = {'username': obj['username'], 'tweet_count': obj['public_metrics']['tweet_count'], 'followers' : obj['public_metrics']['followers_count'], 'following' : obj['public_metrics']['following_count']}
+
+            df_user = pd.DataFrame(users).T
+
             print('looking into tweets json file')
             tweets = {}
             with jsonlines.open(self.file_tweets) as reader: # open file
@@ -76,16 +135,17 @@ class Pipeline:
 
             df_tweets = pd.DataFrame(tweets).T
 
-            # create folder if not exists
+            # create cache folder if not exists and then
             if not os.path.exists(self.path_cache):
                 os.makedirs(self.path_cache)
-
+            # save file in the cache folder both csv and pkl format
             df_user.to_csv(os.path.join(self.path_cache,'users_'+self.name+'.csv'))
             df_tweets.to_csv(os.path.join(self.path_cache,'tweets_'+self.name+'.csv'))
             df_tweets.to_pickle(file)
         
-        df_tweets = df_tweets[df_tweets['lang'] == 'en']
+        df_tweets = df_tweets[df_tweets['lang'] == 'en'] # consider only english tweets
         
+        # create the dataframes, devide the tweets in original, retweets, quotes and replies
         self.df_tweets = df_tweets
         self.df_original = df_tweets[df_tweets['referenced_type'].isna()]
         self.df_retweets = df_tweets[df_tweets['referenced_type'] == 'retweeted']
@@ -98,25 +158,30 @@ class Pipeline:
 
 
     def get_topics(self):
+        """
+        Get the topics of the original tweets
+           
+        """
 
         file = os.path.join(self.path_cache, 'tweets_'+self.name+'_topics.pkl')
 
+        # if the original dataframe is not created, run process_json
         if(self.df_original is None):
             self.process_json()
 
+        # if pkl file tweets_cop22_topics exists, load it
         if os.path.exists(file):
             print('using cached topics')
             df_cop = pd.read_pickle(file)
         else:
             print('running topic modeling')
 
-
             df_cop = self.df_original
-
+            # prepare documents for topic modeling
             docs = df_cop['text'].tolist()
             docs = [re.sub(r"http\S+", "", doc) for doc in docs]
 
-
+            # topic modeling
             vectorizer_model = CountVectorizer(stop_words="english")
             ctfidf_model = ClassTfidfTransformer(reduce_frequent_words=True)
             model = BERTopic( 
@@ -129,18 +194,21 @@ class Pipeline:
             topics ,probs = model.fit_transform(docs)
             df_cop['topic'] = topics
 
+            # create cache folder if not exists 
             if not os.path.exists(self.path_cache):
                 os.makedirs(self.path_cache)
 
+            # save file in the cache folder 
             df_cop.to_pickle(file)
             model.get_topic_info().to_csv(os.path.join(self.path_cache,'topics_cop22.csv'))
 
+        # add topics label to the originaldataframe and for the not original tweet put the reference of the original tweet in that field 
         self.df_original_labeled = df_cop
         self.df_retweets['topic'] = self.df_retweets['referenced_id']
         self.df_quotes['topic'] = self.df_quotes['referenced_id']
         self.df_reply['topic'] = self.df_reply['referenced_id']
 
-
+        # merge the dataframes
         self.df_retweets_labeled = pd.concat([self.df_original, self.df_retweets])
         self.df_quotes_labeled = pd.concat([self.df_original, self.df_quotes])
         self.df_reply_labeled = pd.concat([self.df_original, self.df_reply])
@@ -150,8 +218,12 @@ class Pipeline:
 
 
     def create_network(self, df_tweets, title):
+        """
+        Create a network from the dataframe of tweets and save it in a gml file
+        """
 
-        print('create network ' + self.name)
+
+        print('create network ' + title)
        
         A = df_tweets['author_name'].unique() # actors
         M = df_tweets.index                   # tweets 
