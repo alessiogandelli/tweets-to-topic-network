@@ -26,6 +26,7 @@ graph [
     bipartite 1
     text "sono il tweet numero1 "
     topics NAN
+    author "anzio"
   ]
   node [
     id 5
@@ -33,6 +34,7 @@ graph [
     bipartite 1
     text "sono il tweet numero 2"
     topics "1"
+    author "bonzo"
   ]
   node [
     id 6
@@ -40,6 +42,7 @@ graph [
     bipartite 1
     text "sono il tweet numero 3"
     topics "1"
+    author "crizio"
   ]
   node [
     id 7
@@ -47,6 +50,7 @@ graph [
     bipartite 1
     text "sono il tweet numero 4"
     topics "3"
+    author "donzo"
   ]
   edge [
     source 0

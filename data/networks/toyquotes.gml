@@ -11,6 +11,7 @@ graph [
     bipartite 1
     text "sono il tweet numero1 "
     topics NAN
+    author "anzio"
   ]
   edge [
     source 0

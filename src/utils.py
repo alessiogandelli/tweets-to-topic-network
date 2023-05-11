@@ -235,6 +235,7 @@ class Pipeline:
         M = df_tweets.index                   # tweets 
         x = df_tweets['text'].to_dict()
         topics = df_tweets['topic'].to_dict()
+        author = df_tweets['author_name'].to_dict()
 
         g = nx.DiGraph()
         g.add_nodes_from(A, bipartite=0) # author of tipe 0
@@ -276,6 +277,7 @@ class Pipeline:
         nx.set_edge_attributes(g, t, 'date')
         nx.set_node_attributes(g, x, 'text')
         nx.set_node_attributes(g, topics, 'topics')
+        nx.set_node_attributes(g, author, 'author')
 
         graph_folder = os.path.join(self.path, 'networks')
 
@@ -283,7 +285,7 @@ class Pipeline:
             os.makedirs(graph_folder)
 
         nx.write_gml(g, os.path.join(graph_folder,self.name+title+'.gml'))
-
+        print('network created at', os.path.join(graph_folder,self.name+title+'.gml'))
 
         return (g, x , t)
 # %%
