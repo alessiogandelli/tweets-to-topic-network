@@ -130,7 +130,8 @@ class Pipeline:
                                         'referenced_id': obj['referenced_tweets'][0]['id'] if 'referenced_tweets' in obj else None,
                                         'mentions_name': [ann.get('username') for ann in obj.get('entities',  {}).get('mentions', [])],
                                         'mentions_id': [ann.get('id') for ann in obj.get('entities',  {}).get('mentions', [])],
-                                        'context_annotations': [ann.get('entity').get('name') for ann in obj.get('context_annotations', [])]}
+                                       # 'context_annotations': [ann.get('entity').get('name') for ann in obj.get('context_annotations', [])]
+                                       }
 
 
             df_tweets = pd.DataFrame(tweets).T
@@ -191,8 +192,14 @@ class Pipeline:
                                 min_topic_size   =   100,
                             )
 
-            topics ,probs = model.fit_transform(docs)
-            df_cop['topic'] = topics
+            try:
+                topics ,probs = model.fit_transform(docs)
+                df_cop['topic'] = topics            
+                model.get_topic_info().to_csv(os.path.join(self.path_cache,'topics_cop22.csv'))
+
+            except:
+                print('error in topic modeling')
+                df_cop['topic'] = -1
 
             # create cache folder if not exists 
             if not os.path.exists(self.path_cache):
@@ -200,7 +207,6 @@ class Pipeline:
 
             # save file in the cache folder 
             df_cop.to_pickle(file)
-            model.get_topic_info().to_csv(os.path.join(self.path_cache,'topics_cop22.csv'))
 
         # add topics label to the originaldataframe and for the not original tweet put the reference of the original tweet in that field 
         self.df_original_labeled = df_cop
@@ -271,7 +277,12 @@ class Pipeline:
         nx.set_node_attributes(g, x, 'text')
         nx.set_node_attributes(g, topics, 'topics')
 
-        nx.write_gml(g, os.path.join(self.path, 'networks', self.name+title+'.gml'))
+        graph_folder = os.path.join(self.path, 'networks')
+
+        if not os.path.exists(graph_folder):
+            os.makedirs(graph_folder)
+
+        nx.write_gml(g, os.path.join(graph_folder,self.name+title+'.gml'))
 
 
         return (g, x , t)
