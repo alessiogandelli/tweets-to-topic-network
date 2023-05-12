@@ -51,7 +51,7 @@ def get_topics(df_cop):
 
     #cop.to_pickle(os.path.join(path,'tweets_cop22_topics.pkl'))
     #model.get_topic_info().to_csv(os.path.join(path,'topics_cop22.csv'))
-
+    
 
 
     return df_cop

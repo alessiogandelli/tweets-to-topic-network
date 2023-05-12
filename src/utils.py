@@ -9,6 +9,8 @@ from sklearn.feature_extraction.text import CountVectorizer
 from bertopic.vectorizers import ClassTfidfTransformer
 from networkx.algorithms import bipartite
 import networkx as nx
+import uunet.multinet as ml
+
 os.environ['TOKENIZERS_PARALLELISM'] = 'false' # to avoid a warning 
 
 #%%
@@ -47,6 +49,10 @@ class Pipeline:
         dataframe containing all the replies
     df_reply_labeled : pandas.DataFrame
         dataframe containing all tweets and replies and are labeled with the topic
+    proj_graphs : dict
+        dictionary containing all the projected graph of users 
+    ml_network : uunet.multinet
+        multinet object containing the network of the users each layer is a topic
 
     Methods
     -------
@@ -56,6 +62,11 @@ class Pipeline:
         get the topics of the original tweets
     create_network(df -> pandas.DataFrame, title -> str)
         create the network of the given dataset and save in gml format in the network folder
+    project_network(path -> dict)
+        project the network into multiple one mode network, one for each topic, saved in a dict 
+        using networkx 
+    create_multilayer_network()
+        create the multilayer network using uunet
 
     """
 
@@ -85,6 +96,8 @@ class Pipeline:
         self.df_quotes_labeled = None
         self.df_reply = None
         self.df_reply_labeled = None
+        self.proj_graphs = {}
+        self.ml_network = ml.empty()
 
 
 
@@ -155,8 +168,6 @@ class Pipeline:
 
 
         return df_tweets
-
-
 
     def get_topics(self):
         """
@@ -250,9 +261,6 @@ class Pipeline:
 
         return df_cop
 
-
-
-
     def create_network(self, df_tweets, title):
         """
         Create a network from the dataframe of tweets and save it in a gml file
@@ -318,4 +326,83 @@ class Pipeline:
         print('network created at', os.path.join(graph_folder,self.name+title+'.gml'))
 
         return (g, x , t)
+
+    def project_network(self, path):
+        """
+        Project a network from a gml file into multiple networks based onthe topic of the tweets
+        """
+
+        def recursive_explore(graph, node, visited, start_node, is_start_node = False, edges = None, topic= None):
+
+            if edges is None:
+                edges = {}
+            # it is a user 
+            if node['bipartite'] == 0.0:
+                if  not is_start_node and node != start_node:
+                # print(start_node['label'], node['label'])
+                    edges.setdefault(topic, []).append((start_node['label'], node['label']))
+                    #edges.append(((start_node['label'], node['label']), topic))
+                    return edges
+                elif node == start_node and not is_start_node:
+                    #print('ho incontrato di nuovo me')
+                    return 'me'
+            else :
+                if topic is None:
+                    topic = node['topics']
+            # it is a tweet
+        
+
+            visited.add(node)
+            neighbors = graph.neighborhood(node, mode='out')
+
+
+            for neighbor in neighbors[1:]:
+                if neighbor not in visited:
+                    node = g.vs[neighbor]
+                    
+                    result = recursive_explore(graph, node, visited, start_node, False, edges, topic)
+                    if result is None:
+                        #print(start_node['label'], node['label'])
+                        return result
+
+            #print(start_node['label'] , node['author'])
+            #edges.append(((start_node['label'], node['author']), topic))
+            edges.setdefault(topic, []).append((start_node['label'], node['author']))
+            return edges
+
+
+        edges = {}
+
+        for n in g.vs.select(bipartite=0):
+            # get all neighbors of g
+            visited = set()
+            result = recursive_explore(g, n, visited, start_node = n , is_start_node=True)
+
+            edges = {key: edges.get(key, []) + result.get(key, []) for key in set(edges) | set(result)}
+
+        edges = {e: set(edges[e]) for e in edges }
+        edges.pop(None, None)
+        # drop key 
+       
+        for t, e in edges.items():
+            self.proj_graphs[t] = nx.from_edgelist(e, create_using=nx.DiGraph())
+
+        return self.proj_graphs
+
+    def create_multilayer_network(self):
+        """
+        Create a multilayer network from the projected networks using the library 
+        developed by infolab at uppsala university
+
+        """
+        if self.proj_graphs == {}:
+            print('project the network first')
+        else:
+        
+            for t, g in self.proj_graphs.items():
+                ml.add_nx_layer(self.ml_network, g, str(t))
+            
+            return self.ml_network
+
+
 # %%
