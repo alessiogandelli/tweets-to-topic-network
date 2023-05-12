@@ -9,6 +9,8 @@ from sklearn.feature_extraction.text import CountVectorizer
 from bertopic.vectorizers import ClassTfidfTransformer
 from networkx.algorithms import bipartite
 import networkx as nx
+from igraph import Graph 
+import igraph as ig
 import uunet.multinet as ml
 
 os.environ['TOKENIZERS_PARALLELISM'] = 'false' # to avoid a warning 
@@ -370,6 +372,7 @@ class Pipeline:
             edges.setdefault(topic, []).append((start_node['label'], node['author']))
             return edges
 
+        g =  Graph.Read_GML(path)
 
         edges = {}
 
