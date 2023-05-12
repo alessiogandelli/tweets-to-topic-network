@@ -189,15 +189,18 @@ class Pipeline:
                                 vectorizer_model =   vectorizer_model,
                                 ctfidf_model      =   ctfidf_model,
                                 nr_topics        =  'auto',
-                                min_topic_size   =   100,
+                                min_topic_size   =   max(int(len(docs)/100),10),
                             )
+            topics ,probs = model.fit_transform(docs)
+            df_cop['topic'] = topics            
 
             try:
                 topics ,probs = model.fit_transform(docs)
                 df_cop['topic'] = topics            
                 model.get_topic_info().to_csv(os.path.join(self.path_cache,'topics_cop22.csv'))
 
-            except:
+            except Exception as e:
+                print(e)
                 print('error in topic modeling')
                 df_cop['topic'] = -1
 
@@ -215,12 +218,29 @@ class Pipeline:
         self.df_reply['topic'] = self.df_reply['referenced_id']
 
         # merge the dataframes
-        self.df_retweets_labeled = pd.concat([self.df_original, self.df_retweets])
-        self.df_quotes_labeled = pd.concat([self.df_original, self.df_quotes])
-        self.df_reply_labeled = pd.concat([self.df_original, self.df_reply])
+        self.df_retweets_labeled = pd.concat([self.df_original_labeled, self.df_retweets])
+        self.df_quotes_labeled = pd.concat([self.df_original_labeled, self.df_quotes])
+        self.df_reply_labeled = pd.concat([self.df_original_labeled, self.df_reply])
+
+        def resolve_topic(df, row_id):
+            if isinstance(row_id, int): # the topic 
+                return int(row_id)
+            else: # the pointer 
+                try:
+                    topic = df.loc[row_id, 'topic']
+                    return resolve_topic(df, topic)
+                except: # if there is not the referenced tweet we discard the tweet
+                    return None
+        
+        self.df_retweets_labeled['topic'] = self.df_retweets_labeled.apply(lambda row: resolve_topic(self.df_retweets_labeled, row['topic']), axis=1)
+        self.df_quotes_labeled['topic'] = self.df_quotes_labeled.apply(lambda row: resolve_topic(self.df_quotes_labeled, row['topic']), axis=1)
+        self.df_reply_labeled['topic'] = self.df_reply_labeled.apply(lambda row: resolve_topic(self.df_reply_labeled, row['topic']), axis=1)
+
 
 
         return df_cop
+
+
 
 
     def create_network(self, df_tweets, title):
