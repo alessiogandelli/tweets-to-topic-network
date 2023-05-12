@@ -27,27 +27,10 @@ p.create_network(p.df_reply_labeled, 'reply')
 
 
 #%%
-p.df_retweets_labeled.value_counts('topic')
+
 
 # %%
 file_tweets = '/Volumes/boot420/Users/data/climate_network/test/sample.json'
 file_user = '/Volumes/boot420/Users/data/climate_network/test/users_cop22.json'
 # %%
 
-
-
-def resolve_topic(df, row_id):
-    if isinstance(row_id, int): # the topic 
-        return int(row_id)
-    else: # the pointer 
-        try:
-            topic = df.loc[row_id, 'topic']
-            return get_topic(df, topic)
-        except: # if there is not the referenced tweet we discard the tweet
-            return None
-
-df['resolved_topic'] = df.apply(lambda x: resolve_topic_name(df, x.topic), axis=1)
-df['topic2'] = df.apply(lambda x: get_topic(df, x.topic), axis=1)
-# %%
-
-# remove tweets that have 

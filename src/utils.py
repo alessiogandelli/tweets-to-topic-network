@@ -236,6 +236,16 @@ class Pipeline:
         self.df_quotes_labeled['topic'] = self.df_quotes_labeled.apply(lambda row: resolve_topic(self.df_quotes_labeled, row['topic']), axis=1)
         self.df_reply_labeled['topic'] = self.df_reply_labeled.apply(lambda row: resolve_topic(self.df_reply_labeled, row['topic']), axis=1)
 
+        # remove the tweets that have not a topic
+        self.df_retweets_labeled = self.df_retweets_labeled[self.df_retweets_labeled['topic'].notna()]
+        self.df_quotes_labeled = self.df_quotes_labeled[self.df_quotes_labeled['topic'].notna()]
+        self.df_reply_labeled = self.df_reply_labeled[self.df_reply_labeled['topic'].notna()]
+
+        # topic to int 
+        self.df_retweets_labeled['topic'] = self.df_retweets_labeled['topic'].astype(int)
+        self.df_quotes_labeled['topic'] = self.df_quotes_labeled['topic'].astype(int)
+        self.df_reply_labeled['topic'] = self.df_reply_labeled['topic'].astype(int)
+
 
 
         return df_cop
