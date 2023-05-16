@@ -89,6 +89,7 @@ class Pipeline:
         self.path = '/'.join(self.path)
         self.path_cache = os.path.join(self.path, 'cache')
         self.name = self.file_tweets.split('/')[-1].split('.')[0]
+        self.graph_dir = os.path.join(self.path, 'networks')
         self.df_tweets = None
         self.df_original = None
         self.df_original_labeled = None
@@ -281,7 +282,6 @@ class Pipeline:
         g.add_nodes_from(A, bipartite=0) # author of tipe 0
         g.add_nodes_from(M, bipartite=1) # tweets of type 1
 
-        print('nodes added')
 
         # list of tuples between author_nname and index 
         edges = list(zip(df_tweets['author_name'], df_tweets.index)) # author-> tweet
@@ -293,7 +293,7 @@ class Pipeline:
         g.add_edges_from(edges, weight = 10 )
         g.add_edges_from(ref_edges, weight = 1)
 
-        print('edges added')
+   
 
         # remove all nodes authomatically addd 
 
@@ -307,7 +307,6 @@ class Pipeline:
 
         t = {e: date_lookup[e[1]] for e in g.edges()}
         g.add_edges_from(men_edges)
-        print('mentions added')
 
         # set bipartite = 0 ( so actors) to the new nodes(users) added 
         nodes_to_set = [node for node in g.nodes if 'bipartite' not in g.nodes[node]]
@@ -319,19 +318,22 @@ class Pipeline:
         nx.set_node_attributes(g, topics, 'topics')
         nx.set_node_attributes(g, author, 'author')
 
-        graph_folder = os.path.join(self.path, 'networks')
+        #self.graph_dir = os.path.join(self.path, 'networks')
 
-        if not os.path.exists(graph_folder):
-            os.makedirs(graph_folder)
+        if not os.path.exists(self.graph_dir):
+            os.makedirs(self.graph_dir)
 
-        nx.write_gml(g, os.path.join(graph_folder,self.name+title+'.gml'))
-        print('network created at', os.path.join(graph_folder,self.name+title+'.gml'))
+        filename = os.path.join(self.graph_dir,self.name+'_'+title+'.gml')
+        nx.write_gml(g, filename)
+        print('network created at', filename)
+
+        self.project_network(path = filename , title = title)
 
         return (g, x , t)
 
-    def project_network(self, path):
+    def project_network(self, path = None, nx_graph = None, title = None):
         """
-        Project a network from a gml file into multiple networks based onthe topic of the tweets
+        Project a network from a gml file into multiple networks based on the topic of the tweets
         """
 
         def recursive_explore(graph, node, visited, start_node, is_start_node = False, edges = None, topic= None):
@@ -372,9 +374,19 @@ class Pipeline:
             edges.setdefault(topic, []).append((start_node['label'], node['author']))
             return edges
 
-        g =  Graph.Read_GML(path)
+        if path is not None:
+            g =  Graph.Read_GML(path)
+            
+        elif nx_graph is not None:
+            g = Graph.from_networkx(nx_graph)
+            g.vs['label'] = g.vs['_nx_name']
+            
+        else:
+            print('provide a graph of a gml file o a networkx graph')
+            return None
 
         edges = {}
+        ml_network = ml.empty()
 
         for n in g.vs.select(bipartite=0):
             # get all neighbors of g
@@ -386,16 +398,31 @@ class Pipeline:
         edges = {e: set(edges[e]) for e in edges }
         edges.pop(None, None)
         # drop key 
+        print('projected network created')
+
+        prj_dir = os.path.join(self.graph_dir, 'projected')
+
+        if not os.path.exists(prj_dir):
+            os.makedirs(prj_dir)
        
         for t, e in edges.items():
-            self.proj_graphs[t] = nx.from_edgelist(e, create_using=nx.DiGraph())
+            print(t, len(e))
+            if t != 'NaN':
+                self.proj_graphs[t] = nx.from_edgelist(e, create_using=nx.DiGraph())
+                nx.write_gml(self.proj_graphs[t], os.path.join(prj_dir, self.name+'_'+title+'_prj_'+str(t)+'.gml'))
+                ml.add_nx_layer(ml_network, self.proj_graphs[t], str(t))
+        
+        ml.write(ml_network, file = os.path.join(self.graph_dir, self.name+'_'+title+'_ml.gml'))
+        # save file 
+       # Graph.write_gml(g, os.path.join(self.graph_dir, self.name+title+'_prj.gml'))
 
+        
         return self.proj_graphs
 
-    def create_multilayer_network(self):
+    def create_multilayer_network(self, title = None):
         """
         Create a multilayer network from the projected networks using the library 
-        developed by infolab at uppsala university
+        developed by infolab at Uppsala university
 
         """
         if self.proj_graphs == {}:
@@ -404,8 +431,12 @@ class Pipeline:
         
             for t, g in self.proj_graphs.items():
                 ml.add_nx_layer(self.ml_network, g, str(t))
+        
+        prj_dir = os.path.join(self.graph_dir, 'projected')
+        
+        ml.write(self.ml_network, file = os.path.join(prj_dir, title+'_ml.gml'))
             
-            return self.ml_network
+        return self.ml_network
 
 
 # %%
