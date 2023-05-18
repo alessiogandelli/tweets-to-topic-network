@@ -1,0 +1,24 @@
+#TYPE
+multiplex
+
+#VERSION
+3.0
+
+#LAYERS
+-1.0,DIRECTED,LOOPS
+
+#ACTOR ATTRIBUTES
+
+#VERTEX ATTRIBUTES
+
+#EDGE ATTRIBUTES
+
+#ACTORS
+anzio
+
+#VERTICES
+anzio,-1.0
+
+#EDGES
+anzio,anzio,-1.0
+

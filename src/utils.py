@@ -336,42 +336,41 @@ class Pipeline:
         Project a network from a gml file into multiple networks based on the topic of the tweets
         """
 
-        def recursive_explore(graph, node, visited, start_node, is_start_node = False, edges = None, topic= None):
 
+        def recursive_explore(graph, node,start_node, previous_node = None , edges = None, topic= None, depth = 0):
+
+            neighbors = graph.neighborhood(node, mode='out')
+            #print(start_node['label'], node['label'],  len(neighbors))
             if edges is None:
                 edges = {}
-            # it is a user 
-            if node['bipartite'] == 0.0:
-                if  not is_start_node and node != start_node:
-                # print(start_node['label'], node['label'])
+            
+
+
+            # it is a user
+            if node['bipartite'] == 0.0 :
+                # if there is only one node in the middle it is a mention
+                if depth == 2 :
                     edges.setdefault(topic, []).append((start_node['label'], node['label']))
-                    #edges.append(((start_node['label'], node['label']), topic))
-                    return edges
-                elif node == start_node and not is_start_node:
-                    #print('ho incontrato di nuovo me')
-                    return 'me'
-            else :
+                    return
+                # in this  case we have a retweet  
+                elif depth > 2 :
+                    edges.setdefault(topic, []).append((start_node['label'], previous_node['author']))
+                    return
+            # it is a tweet
+            else:
                 if topic is None:
                     topic = node['topics']
-            # it is a tweet
-        
+                # end of the chain it is a retweet without mention
+                if (len(neighbors) == 1):
+                    edges.setdefault(topic, []).append((start_node['label'], node['author']))
+                    return
 
-            visited.add(node)
-            neighbors = graph.neighborhood(node, mode='out')
-
-
+            # ecplore all the neighbors
             for neighbor in neighbors[1:]:
-                if neighbor not in visited:
-                    node = g.vs[neighbor]
-                    
-                    result = recursive_explore(graph, node, visited, start_node, False, edges, topic)
-                    if result is None:
-                        #print(start_node['label'], node['label'])
-                        return result
+                new_node = g.vs[neighbor]
+                recursive_explore(graph, node = new_node, previous_node = node, start_node = start_node, depth = depth+1, edges= edges, topic= topic)
 
-            #print(start_node['label'] , node['author'])
-            #edges.append(((start_node['label'], node['author']), topic))
-            edges.setdefault(topic, []).append((start_node['label'], node['author']))
+
             return edges
 
         if path is not None:
@@ -391,8 +390,8 @@ class Pipeline:
         for n in g.vs.select(bipartite=0):
             # get all neighbors of g
             visited = set()
-            result = recursive_explore(g, n, visited, start_node = n , is_start_node=True)
-
+            result = recursive_explore(g, n, start_node = n)
+            #print(result)
             edges = {key: edges.get(key, []) + result.get(key, []) for key in set(edges) | set(result)}
 
         edges = {e: set(edges[e]) for e in edges }

@@ -16,9 +16,10 @@ p = Pipeline(file_tweets, file_user)
 p.process_json()
 p.get_topics()
 
-p.create_network(p.df_retweets_labeled, 'retweets')
+p.create_network(p.df_reply_labeled, 'reply')
 p.create_network(p.df_quotes_labeled, 'quotes')
-g, x,t = p.create_network(p.df_reply_labeled, 'reply')
+p.create_network(p.df_retweets_labeled, 'retweets')
+
 
 
 
@@ -26,14 +27,7 @@ g, x,t = p.create_network(p.df_reply_labeled, 'reply')
 
 
 #%%
-p.project_network(path='/Volumes/boot420/Users/data/climate_network/test/networks/sampleretweets.gml', title='retweets')
-
-# %%
-file_tweets = '/Volumes/boot420/Users/data/climate_network/test/sample.json'
-file_user = '/Volumes/boot420/Users/data/climate_network/test/users_cop22.json'
-# %%
-
-p.create_multilayer_network()
+#p.project_network(path='/Volumes/boot420/Users/data/climate_network/test/networks/sampleretweets.gml', title='retweets')
 
 
 # %%

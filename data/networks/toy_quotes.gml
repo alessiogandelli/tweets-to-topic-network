@@ -10,7 +10,7 @@ graph [
     label "1"
     bipartite 1
     text "sono il tweet numero1 "
-    topics NAN
+    topics -1
     author "anzio"
   ]
   edge [
