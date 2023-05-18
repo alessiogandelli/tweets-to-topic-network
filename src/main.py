@@ -1,7 +1,6 @@
 #%%
 from utils import Pipeline
 import sys 
-
 import datetime
 
 # get file from command line

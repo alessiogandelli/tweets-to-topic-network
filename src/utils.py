@@ -339,13 +339,12 @@ class Pipeline:
 
         def recursive_explore(graph, node,start_node, previous_node = None , edges = None, topic= None, depth = 0):
 
-            neighbors = graph.neighborhood(node, mode='out')
-            #print(start_node['label'], node['label'],  len(neighbors))
+            neighbors = graph.neighborhood(node, mode='out') 
+            
+            # if it is the first we initialize the edges
             if edges is None:
                 edges = {}
             
-
-
             # it is a user
             if node['bipartite'] == 0.0 :
                 # if there is only one node in the middle it is a mention
@@ -369,7 +368,6 @@ class Pipeline:
             for neighbor in neighbors[1:]:
                 new_node = g.vs[neighbor]
                 recursive_explore(graph, node = new_node, previous_node = node, start_node = start_node, depth = depth+1, edges= edges, topic= topic)
-
 
             return edges
 
