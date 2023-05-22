@@ -88,56 +88,43 @@ The function creates a [temporal text network](https://appliednetsci.springerope
 
 
 
+
 ```python
 p.create_network(p.df_retweets_labeled, 'retweets')
 ```
-
-
-
-
-
-
-
-
-
-
-# data
-First step was to transform the json in csv removing all non necessary information and saving much more space and having the possibility to use tabular data.
-This process is in the data file, the output is a csv with the users and one with the tweets. Moreover the tweet file has been also saved in a pickle file to be able to load it faster.
-
-# topic modeling 
-The topic modeling is done using Bertopic
-
-# network 
-starting from the tabular file we have just created we can create the temporal text network created according to https://appliednetsci.springeropen.com/articles/10.1007/s41109-018-0082-3.
-
-It is a bipartite network with nodes that can be or users or tweets.
-edges: 
+In this example we can see how a network is built, the small nodes are the tweets, while the other are the authors. The color of the tweets corresponds to the topic of the tweet. The edges are of three types:
 - user-tweet: if the user has tweeted the tweet
-- tweet-user: if the tweet mention the user 
+- tweet-user: if the tweet mention the user
 - tweet-tweet: if the tweet retweets the other
 
-the create_network function gets as input a dataframe loaded from the csv file and returns:
-- a directed graph 
-- dictionary x which maps the tweet id to its text 
-- dictionary t which maps the couple (user, tweet) to the time of the tweet
-
-note that the content of this dictionary is also present as nodes and edges attributes 
-
-TODO
-topic modeling and multilayer network 
-
-one layer per topic 
-
-# to understand 
-
-cop22 
-number of tweets = 768174
-number of tweets that are not retweets =  180926
-number of tweets that are not retweets but contains RT in the text = 12019
-number of tweets that are not retweets but contains RT from pablorodas = 6639
+![full network](https://github.com/alessiogandelli/tweets-to-topic-network/blob/main/data/full_network.png)
 
 
-number of retweets = 587248
-number of referenced tweets = 104368
-number of refereenced tweets that we do not have =  14403
+## network projection
+Now we have two sets of nodes and we want only one: the authors. To achieve this i used an hybrid approach between iteration and recursion. First it iterates over all the users, so for each user the goal now is to create all the edges between this user and others. 
+For each user we iterate over all its tweets recursively searching for the end of the chain. There are few cases:
+- It is an original tweet with no mentions: do nothing 
+- It is an original tweet mentioning other users: create an edge between the user and the mentioned users
+- It is a retweet: create an edge between the user and the author of the original tweet
+
+In this process is also involved the topics of the tweets, so while projecting it is created a network for each topic, and the edges are added to the corresponding network. The networks are saved in gml format in the `networks/projected` folder.
+
+The path is the path of the gml file of the full network.
+
+```python
+p.project_network(path)
+```
+
+
+## create multilayer network
+The multilayer network is created using the `create_multilayer_network()` function which uses the [multinet](https://github.com/uuinfolab/py_multinet) library developed by the infolab in Uppsala university. 
+
+This step is made inside the projection function, so you don't need to run it again.
+
+```python
+p.create_multilayer_network()
+```
+
+This is an example of how it looks like 
+
+![multilayer network](https://github.com/alessiogandelli/tweets-to-topic-network/blob/main/data/projected_topics_ml.png)

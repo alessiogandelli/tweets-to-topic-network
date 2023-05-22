@@ -385,6 +385,7 @@ class Pipeline:
         edges = {}
         ml_network = ml.empty()
 
+        # for each user
         for n in g.vs.select(bipartite=0):
             # get all neighbors of g
             visited = set()
