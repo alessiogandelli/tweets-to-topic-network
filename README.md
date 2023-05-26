@@ -75,7 +75,7 @@ Then we can process the json files, this creates a pandas dataframe contaning al
 p.process_json()
 ```
 ## topic modeling 
-Then we can get the topics of the tweets using BERTopic, this creates a new column in the dataframe with the topic of the tweet. The topics are saved in a pickle file for caching.
+Then we can get the topics of the tweets using BERTopic, this creates a new column in the dataframe with the topic of the tweet. The topics are saved in a pickle file for caching. In [this](https://github.com/alessiogandelli/topic-modeling-evaluation) repository I conclude that BERTopic is the best topic modeling algorithm for this scenario. 
 
 ```python
 p.get_topics()
@@ -128,3 +128,13 @@ p.create_multilayer_network()
 This is an example of how it looks like 
 
 ![multilayer network](https://github.com/alessiogandelli/tweets-to-topic-network/blob/main/data/projected_topics_ml.png)
+
+
+# A Real Example
+
+Processing around 400 tweets with the hashtag #cop22, this took around 3 hours on 2018 macbook air.
+
+- json tweets: 878 MB
+- csv/pkl tweets: 236 MB
+- retweet gml network: 234 MB
+- projected gml network: 19 MB

@@ -1,6 +1,8 @@
 #%%
 # degree analysis 
 
+g = nx.read_gml(full_network_path)
+
 degree = {i:g.degree(i) for i in g.nodes}
 degree = pd.DataFrame.from_dict(degree, orient='index')
 degree.columns = ['degree']
@@ -21,3 +23,5 @@ pos = nx.spring_layout(sub, k = 0.07)
 nx.draw(sub, with_labels=False, pos = pos, node_size = 4, node_color = color, width = 0.1)
 plt.show()
 
+
+# %%
