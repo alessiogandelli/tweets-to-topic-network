@@ -9,7 +9,7 @@ from igraph import Graph
 import datetime
 file_tweets = '/Users/alessiogandelli/dev/internship/tweets-to-topic-network/data/toy.json'
 file_user = '/Users/alessiogandelli/dev/internship/tweets-to-topic-network/data/toy_users.json'
-# %%
+
 
 # create toy dataframe 
 #

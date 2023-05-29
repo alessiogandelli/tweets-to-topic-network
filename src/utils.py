@@ -277,7 +277,9 @@ class Pipeline:
         x = df_tweets['text'].to_dict()
         topics = df_tweets['topic'].to_dict()
         author = df_tweets['author_name'].to_dict()
-
+        is_retweet = df_tweets['referenced_type'].to_dict()
+        # none to 'original
+        is_retweet = {k: 'original' if v is None else v for k, v in is_retweet.items()}
         g = nx.DiGraph()
         g.add_nodes_from(A, bipartite=0) # author of tipe 0
         g.add_nodes_from(M, bipartite=1) # tweets of type 1
@@ -317,6 +319,7 @@ class Pipeline:
         nx.set_node_attributes(g, x, 'text')
         nx.set_node_attributes(g, topics, 'topics')
         nx.set_node_attributes(g, author, 'author')
+        nx.set_node_attributes(g, is_retweet, 'is_retweet')
 
         #self.graph_dir = os.path.join(self.path, 'networks')
 
