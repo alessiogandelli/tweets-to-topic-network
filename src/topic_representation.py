@@ -10,7 +10,8 @@ llm = OpenAI(temperature=0.3)
 
 
 template = """I want you to act as a tweet labeler, you are given representative words
-     from a topic and three representative tweets, give more attention to the words.
+     from a topic and three representative tweets, give more attention to the words, all the tweets are related to climate change, and COP, no need to mention it, detect subtopics.
+     start with "label:" and avoid hashtags,
      which is a good short label for the topic containing the words [{words}], here you are 3 tweets to help you:
      first = \"{tweet1}\", second = \"{tweet2}\", third = \"{tweet3}\""""
 
@@ -20,27 +21,50 @@ prompt = PromptTemplate(
     template=template,
 )
 
-#prompt.format(words="climate change, floods, climate crisis", tweet1="i love climate change ", tweet2="my house is under the sea now", tweet3="my car is useless now")
 
 chain = LLMChain(llm=llm, prompt=prompt)
-chain.run(  words="climate change, floods, climate crisis", 
-            tweet1="i love climate change ", 
-            tweet2="my house is under the sea now", 
-            tweet3="my car is useless now")
 
 
 
 
 # %%
-topics = list(model.get_topic_info()['Topic']) # get inferred topics 
-topic_words = model.get_topics() # get words for each topic
+topics = list(p.model.get_topic_info()['Topic']) # get inferred topics 
+topic_words = p.model.get_topics() # get words for each topic
 labels = {}
 
 for topic in topics:
-    tweets = model.get_representative_docs(topic)
+    tweets = p.model.get_representative_docs(topic)
     words = [word[0] for word in topic_words[topic]]
+    labels[topic] = chain.run(words=words, tweet1=tweets[0], tweet2=tweets[1], tweet3=tweets[2])
+
+# remove \n from values of labels 
+
+labels = {key: value.replace('\n', '') for key, value in labels.items()} 
+labels = {key: value.replace('Label:', '') for key, value in labels.items()}
+#strip 
+labels = {key: value.strip() for key, value in labels.items()}
+labels
+
+# save labels to file 
+import json
+
+with open('/Volumes/boot420/Users/data/climate_network/cop22/cache/labels.json', 'w') as fp:
+    json.dump(labels, fp)
+    
 
 #%%
+
+
+
+
+
+
+
+
+
+
+
+
 
 from langchain import PromptTemplate, FewShotPromptTemplate
 
@@ -73,6 +97,19 @@ prompt.format(words="climate change, floods, climate crisis", tweet1="i love cli
 # %%
 chain = LLMChain(llm=llm, prompt=prompt)
 chain.run(words="climate change, floods, climate crisis", tweet1="i love climate change ", tweet2="my house is under the sea now", tweet3="my car is useless now")
+
+
+# %%
+
+
+topics = list(p.model.get_topic_info()['Topic']) # get inferred topics 
+topic_words = p.model.get_topics() # get words for each topic
+labels = {}
+
+for topic in topics:
+    tweets = p.model.get_representative_docs(topic)
+    words = [word[0] for word in topic_words[topic]]
+
 
 
 # %%

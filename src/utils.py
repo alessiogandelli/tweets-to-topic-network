@@ -12,8 +12,16 @@ import networkx as nx
 from igraph import Graph 
 import igraph as ig
 import uunet.multinet as ml
+from langchain import PromptTemplate
+from langchain.llms import OpenAI
+from dotenv import load_dotenv
+from langchain.chains import LLMChain
+import json
+load_dotenv()
 
 os.environ['TOKENIZERS_PARALLELISM'] = 'false' # to avoid a warning 
+
+
 
 #%%
 class Pipeline:
@@ -90,6 +98,7 @@ class Pipeline:
         self.path_cache = os.path.join(self.path, 'cache')
         self.name = self.file_tweets.split('/')[-1].split('.')[0]
         self.graph_dir = os.path.join(self.path, 'networks')
+        self.model = None
         self.df_tweets = None
         self.df_original = None
         self.df_original_labeled = None
@@ -101,6 +110,8 @@ class Pipeline:
         self.df_reply_labeled = None
         self.proj_graphs = {}
         self.ml_network = ml.empty()
+        self.topic_labels = None
+        self.text = None
 
 
 
@@ -129,26 +140,31 @@ class Pipeline:
 
             print('looking into tweets json file')
             tweets = {}
+            attachments = []
             with jsonlines.open(self.file_tweets) as reader: # open file
                 for obj in reader:
-                    tweets[obj['id']] = {'author': obj['author_id'], 
-                                        'author_name': users[obj['author_id']]['username'],
-                                        'text': obj['text'], 
-                                        'date': obj['created_at'],
-                                        'lang':obj['lang'] ,
-                                        'reply_count': obj['public_metrics']['reply_count'], 
-                                        'retweet_count': obj['public_metrics']['retweet_count'], 
-                                        'like_count': obj['public_metrics']['like_count'], 
-                                        'quote_count': obj['public_metrics']['quote_count'],
-                                        'impression_count': obj['public_metrics']['impression_count'],
-                                        'conversation_id': obj['conversation_id'] if 'conversation_id' in obj else None,
-                                        'referenced_type': obj['referenced_tweets'][0]['type'] if 'referenced_tweets' in obj else None,
-                                        'referenced_id': obj['referenced_tweets'][0]['id'] if 'referenced_tweets' in obj else None,
-                                        'mentions_name': [ann.get('username') for ann in obj.get('entities',  {}).get('mentions', [])],
-                                        'mentions_id': [ann.get('id') for ann in obj.get('entities',  {}).get('mentions', [])],
-                                       # 'context_annotations': [ann.get('entity').get('name') for ann in obj.get('context_annotations', [])]
-                                       }
+                    if obj.get('attachments') is  None : # avoid tweets with attachments
+                        tweets[obj['id']] = {'author': obj['author_id'], 
+                                            'author_name': users[obj['author_id']]['username'],
+                                            'text': obj['text'], 
+                                            'date': obj['created_at'],
+                                            'lang':obj['lang'] ,
+                                            'reply_count': obj['public_metrics']['reply_count'], 
+                                            'retweet_count': obj['public_metrics']['retweet_count'], 
+                                            'like_count': obj['public_metrics']['like_count'], 
+                                            'quote_count': obj['public_metrics']['quote_count'],
+                                            'impression_count': obj['public_metrics']['impression_count'],
+                                            'conversation_id': obj['conversation_id'] if 'conversation_id' in obj else None,
+                                            'referenced_type': obj['referenced_tweets'][0]['type'] if 'referenced_tweets' in obj else None,
+                                            'referenced_id': obj['referenced_tweets'][0]['id'] if 'referenced_tweets' in obj else None,
+                                            'mentions_name': [ann.get('username') for ann in obj.get('entities',  {}).get('mentions', [])],
+                                            'mentions_id': [ann.get('id') for ann in obj.get('entities',  {}).get('mentions', [])],
+                                        # 'context_annotations': [ann.get('entity').get('name') for ann in obj.get('context_annotations', [])]
+                                        }
+                    else:
+                        attachments.append(obj)
 
+                print('discarded ',len(attachments) ,'tweets with attachments')
 
             df_tweets = pd.DataFrame(tweets).T
 
@@ -188,6 +204,7 @@ class Pipeline:
         if os.path.exists(file):
             print('using cached topics')
             df_cop = pd.read_pickle(file)
+            self.model = BERTopic.load(os.path.join(self.path_cache,'model_'+self.name+'.pkl'))
         else:
             print('running topic modeling')
 
@@ -195,6 +212,8 @@ class Pipeline:
             # prepare documents for topic modeling
             docs = df_cop['text'].tolist()
             docs = [re.sub(r"http\S+", "", doc) for doc in docs]
+            docs = [re.sub(r"@\S+", "", doc) for doc in docs] #  remove mentions 
+            docs = [re.sub(r"#\S+", "", doc) for doc in docs] #  remove hashtags
 
             # topic modeling
             vectorizer_model = CountVectorizer(stop_words="english")
@@ -205,13 +224,14 @@ class Pipeline:
                                 nr_topics        =  'auto',
                                 min_topic_size   =   max(int(len(docs)/100),10),
                             )
-            topics ,probs = model.fit_transform(docs)
-            df_cop['topic'] = topics            
+
 
             try:
                 topics ,probs = model.fit_transform(docs)
-                df_cop['topic'] = topics            
+                df_cop['topic'] = topics    
+                df_cop['topic_prob'] = probs        
                 model.get_topic_info().to_csv(os.path.join(self.path_cache,'topics_cop22.csv'))
+                self.model = model          
 
             except Exception as e:
                 print(e)
@@ -224,6 +244,8 @@ class Pipeline:
 
             # save file in the cache folder 
             df_cop.to_pickle(file)
+            #save model 
+            model.save(os.path.join(self.path_cache,'model_'+self.name+'.pkl'))
 
         # add topics label to the originaldataframe and for the not original tweet put the reference of the original tweet in that field 
         self.df_original_labeled = df_cop
@@ -236,6 +258,7 @@ class Pipeline:
         self.df_quotes_labeled = pd.concat([self.df_original_labeled, self.df_quotes])
         self.df_reply_labeled = pd.concat([self.df_original_labeled, self.df_reply])
 
+        # this is required for propagating the topic to the retweets
         def resolve_topic(df, row_id):
             if isinstance(row_id, int): # the topic 
                 return int(row_id)
@@ -331,8 +354,9 @@ class Pipeline:
         print('network created at', filename)
 
         self.project_network(path = filename , title = title)
+        self.text = x
 
-        return (g, x , t)
+        return (g, x, t)
 
     def project_network(self, path = None, nx_graph = None, title = None):
         """
@@ -438,6 +462,48 @@ class Pipeline:
         ml.write(self.ml_network, file = os.path.join(prj_dir, title+'_ml.gml'))
             
         return self.ml_network
+
+    def label_topics(self):
+        llm = OpenAI(temperature=0.3)
+
+        template = """I want you to act as a tweet labeler, you are given representative words
+            from a topic and three representative tweets, give more attention to the words, all the tweets are related to climate change, and COP, no need to mention it, detect subtopics.
+            start with "label:" and avoid hashtags,
+            which is a good short label for the topic containing the words [{words}], here you are 3 tweets to help you:
+            first = \"{tweet1}\", second = \"{tweet2}\", third = \"{tweet3}\""""
+
+
+        prompt = PromptTemplate(
+            input_variables=["words", "tweet1", "tweet2", "tweet3"],
+            template=template,
+        )
+
+
+        chain = LLMChain(llm=llm, prompt=prompt)
+
+        topics = list(self.model.get_topic_info()['Topic']) # get inferred topics 
+        topic_words = self.model.get_topics() # get words for each topic
+        labels = {}
+
+        for topic in topics:
+            tweets = self.model.get_representative_docs(topic)
+            words = [word[0] for word in topic_words[topic]]
+            labels[topic] = chain.run(words=words, tweet1=tweets[0], tweet2=tweets[1], tweet3=tweets[2])
+
+        # remove \n from values of labels 
+
+        labels = {key: value.replace('\n', '') for key, value in labels.items()} 
+        labels = {key: value.replace('Label:', '') for key, value in labels.items()}
+        #strip 
+        labels = {key: value.strip() for key, value in labels.items()}
+
+        self.topic_labels = labels
+
+        #save in file 
+        with open(os.path.join(self.path_cache, 'labels_'+self.name+'.json'), 'w') as fp:
+            json.dump(labels, fp)
+            
+        return labels
 
 
 # %%

@@ -93,3 +93,9 @@ df_tweets_degree.sort_values('retweets', ascending=False).head(20)
 
 bins = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 sns.histplot(df_tweets_degree['retweets'], bins=bins, kde=False, color='blue', stat='probability')
+
+#%%
+
+import uunet.multinet as ml
+
+# %%
