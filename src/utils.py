@@ -17,10 +17,11 @@ from langchain.llms import OpenAI
 from dotenv import load_dotenv
 from langchain.chains import LLMChain
 import json
+import openai
 load_dotenv()
 
 os.environ['TOKENIZERS_PARALLELISM'] = 'false' # to avoid a warning 
-
+openai.api_key = os.getenv("OPENAI_API_KEY")    
 
 
 #%%
@@ -188,7 +189,7 @@ class Pipeline:
 
         return df_tweets
 
-    def get_topics(self):
+    def get_topics(self, name = 'openai'):
         """
         Get the topics of the original tweets
            
@@ -214,6 +215,20 @@ class Pipeline:
             docs = [re.sub(r"http\S+", "", doc) for doc in docs]
             docs = [re.sub(r"@\S+", "", doc) for doc in docs] #  remove mentions 
             docs = [re.sub(r"#\S+", "", doc) for doc in docs] #  remove hashtags
+            docs = [re.sub(r"\n", "", doc) for doc in docs] #  remove new lines
+            #strip 
+            docs = [doc.strip() for doc in docs]
+            
+            if(name == 'openai'):
+                embs = openai.Embedding.create(input = docs, model="text-embedding-ada-002")['data']
+                embedder = None
+                embeddings = np.array([np.array(emb['embedding']) for emb in embs])
+            else:
+                embedder = SentenceTransformer(self.name)
+                embeddings = self.embedder.encode(self.docs)
+
+            # fit model
+            
 
             # topic modeling
             vectorizer_model = CountVectorizer(stop_words="english")
@@ -223,11 +238,12 @@ class Pipeline:
                                 ctfidf_model      =   ctfidf_model,
                                 nr_topics        =  'auto',
                                 min_topic_size   =   max(int(len(docs)/100),10),
+                                embedding_model  = self.embedder,
                             )
 
 
             try:
-                topics ,probs = model.fit_transform(docs)
+                topics ,probs = model.fit_transform(docs, embeddings = embeddings)
                 df_cop['topic'] = topics    
                 df_cop['topic_prob'] = probs        
                 model.get_topic_info().to_csv(os.path.join(self.path_cache,'topics_cop22.csv'))
