@@ -76,7 +76,7 @@ def get_polarization_by_layer(n_influencers = 30, n = 2):
         # perform dip test on scores
         test = df1['score'].to_numpy()
 
-        dip_res = diptest(test)
+        dip_res = diptest.diptest(test)
         
         if dip_res[1] < 0.05:
             res[l] = (dip_res, df1, df2)
@@ -146,7 +146,7 @@ def draw_network(topic, ax, only_influencers=False):
     nx.set_node_attributes(net, df['score'].to_dict(), 'score')
 
 
- 
+
 
     influencers, users = get_influencers(net, 30)
 
@@ -158,6 +158,10 @@ def draw_network(topic, ax, only_influencers=False):
 
     net = net.to_undirected()
 
+    # delete node when score does not exist, because it's a user that never interacted with an influencer
+    for node in net.copy():
+        if 'score' not in net.nodes[node]:
+            net.remove_node(node)
 
     # gradient color depending on the score 
     cmap = plt.get_cmap('spring')
@@ -173,10 +177,7 @@ def draw_network(topic, ax, only_influencers=False):
             net.remove_edge(e[0], e[1])
 
 
-   # delete node when score does not exist, because it's a user that never interacted with an influencer
-    for node in net.copy():
-        if 'score' not in net.nodes[node]:
-            net.remove_node(node)
+
 
 
     size_map = [100 if node in influencers else 5 for node in net]
@@ -195,35 +196,36 @@ def draw_network(topic, ax, only_influencers=False):
 
     return ax
 
-def create_plots(topics):
+def create_plots(topics, title,only_influencers=False):
     fig, axs = plt.subplots(len(topics), figsize=(10, 10))
+    # add title 
+    fig.suptitle(title, fontsize=25)
+
+
     for i, topic in enumerate(topics):
         ax = axs[i]
         ax.set_title('Topic: ' + str(topic) + ' - ' + topic_label[topic])
-        draw_network(topic, ax)
+        draw_network(topic, ax, only_influencers=only_influencers)
     plt.tight_layout()
     plt.show()
 # %%
 
 
 
+n_influencers = 100
 
-
-res = get_polarization_by_layer(n_influencers = 100)
+res = get_polarization_by_layer(n_influencers = n_influencers)
 sorted_topic_label = plot_dip_test(res)
 
 
-# %%
-
-
-
 # Example usage
-topics_pol = sorted_topic_label[:5]
-topics_not_pol = sorted_topic_label[-5:]
+topics_pol = [t[0] for t in sorted_topic_label[:5]]
+topics_not_pol = [t[0] for t in sorted_topic_label[-5:]]
 
-create_plots(topics_pol)
-create_plots(topics_not_pol)
-
+create_plots(topics_pol, 'most polarized topics' + ' - ' + str(n_influencers) + ' influencers')
+create_plots(topics_not_pol, 'least polarized topics' + ' - ' + str(n_influencers) + ' influencers')
+create_plots(topics_pol,'most polarized topics' + ' - ' + str(n_influencers) + ' influencers',only_influencers=True)
+create_plots(topics_not_pol,'least polarized topics'+' - ' + str(n_influencers) + ' influencers', only_influencers=True)
 
 # %%
 
