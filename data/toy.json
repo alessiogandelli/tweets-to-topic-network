@@ -1,4 +1,487 @@
-{"lang": "en", "possibly_sensitive": false, "public_metrics": {"retweet_count": 8, "reply_count": 0, "like_count": 0, "quote_count": 0, "impression_count": 0}, "conversation_id": "815345170468208642", "entities": {"mentions": [], "hashtags": [{"start": 16, "end": 30, "tag": "CLIMATEchange"}, {"start": 31, "end": 34, "tag": "p2"}, {"start": 112, "end": 118, "tag": "COP22"}, {"start": 119, "end": 124, "tag": "tcot"}, {"start": 125, "end": 128, "tag": "2A"}], "urls": [{"start": 88, "end": 111, "url": "https://t.co/f5lY9m4sE2", "expanded_url": "http://dlvr.it/N0sp69", "display_url": "dlvr.it/N0sp69"}], "annotations": [{"start": 113, "end": 117, "probability": 0.775, "type": "Other", "normalized_text": "COP22"}]}, "text": "sono il tweet numero1 ", "id": "1", "created_at": "2016-12-31T23:53:31.000Z", "author_id": "a", "context_annotations": [{"domain": {"id": "25", "name": "Events", "description": ""}, "entity": {"id": "10040144401", "name": "Extreme Weather + Climate Change"}}, {"domain": {"id": "25", "name": "Events", "description": ""}, "entity": {"id": "10040529339", "name": "Discovery VCN - Earth"}}], "edit_history_tweet_ids": ["815345170468208642"]}
-{"lang": "en", "possibly_sensitive": false, "public_metrics": {"retweet_count": 8, "reply_count": 0, "like_count": 0, "quote_count": 0, "impression_count": 0}, "conversation_id": "815345170468208642", "entities": {"mentions": [], "hashtags": [{"start": 16, "end": 30, "tag": "CLIMATEchange"}, {"start": 31, "end": 34, "tag": "p2"}, {"start": 112, "end": 118, "tag": "COP22"}, {"start": 119, "end": 124, "tag": "tcot"}, {"start": 125, "end": 128, "tag": "2A"}], "urls": [{"start": 88, "end": 111, "url": "https://t.co/f5lY9m4sE2", "expanded_url": "http://dlvr.it/N0sp69", "display_url": "dlvr.it/N0sp69"}], "annotations": [{"start": 113, "end": 117, "probability": 0.775, "type": "Other", "normalized_text": "COP22"}]}, "referenced_tweets": [{"type": "retweeted", "id": "1"}], "text": "sono il tweet numero 2", "id": "2", "created_at": "2016-12-31T23:53:31.000Z", "author_id": "b", "context_annotations": [{"domain": {"id": "25", "name": "Events", "description": ""}, "entity": {"id": "10040144401", "name": "Extreme Weather + Climate Change"}}, {"domain": {"id": "25", "name": "Events", "description": ""}, "entity": {"id": "10040529339", "name": "Discovery VCN - Earth"}}], "edit_history_tweet_ids": ["815345170468208642"]}
-{"lang": "en", "possibly_sensitive": false, "public_metrics": {"retweet_count": 8, "reply_count": 0, "like_count": 0, "quote_count": 0, "impression_count": 0}, "conversation_id": "815345170468208642", "entities": {"mentions": [{"start": 3, "end": 14, "username": "donzo", "id": "d"}], "hashtags": [{"start": 16, "end": 30, "tag": "CLIMATEchange"}, {"start": 31, "end": 34, "tag": "p2"}, {"start": 112, "end": 118, "tag": "COP22"}, {"start": 119, "end": 124, "tag": "tcot"}, {"start": 125, "end": 128, "tag": "2A"}], "urls": [{"start": 88, "end": 111, "url": "https://t.co/f5lY9m4sE2", "expanded_url": "http://dlvr.it/N0sp69", "display_url": "dlvr.it/N0sp69"}], "annotations": [{"start": 113, "end": 117, "probability": 0.775, "type": "Other", "normalized_text": "COP22"}]}, "referenced_tweets": [{"type": "retweeted", "id": "1"}], "text": "sono il tweet numero 3", "id": "3", "created_at": "2016-12-31T23:53:31.000Z", "author_id": "c", "context_annotations": [{"domain": {"id": "25", "name": "Events", "description": ""}, "entity": {"id": "10040144401", "name": "Extreme Weather + Climate Change"}}, {"domain": {"id": "25", "name": "Events", "description": ""}, "entity": {"id": "10040529339", "name": "Discovery VCN - Earth"}}], "edit_history_tweet_ids": ["815345170468208642"]}
-{"lang": "en", "possibly_sensitive": false, "public_metrics": {"retweet_count": 8, "reply_count": 0, "like_count": 0, "quote_count": 0, "impression_count": 0}, "conversation_id": "815345170468208642", "entities": {"mentions": [], "hashtags": [{"start": 16, "end": 30, "tag": "CLIMATEchange"}, {"start": 31, "end": 34, "tag": "p2"}, {"start": 112, "end": 118, "tag": "COP22"}, {"start": 119, "end": 124, "tag": "tcot"}, {"start": 125, "end": 128, "tag": "2A"}], "urls": [{"start": 88, "end": 111, "url": "https://t.co/f5lY9m4sE2", "expanded_url": "http://dlvr.it/N0sp69", "display_url": "dlvr.it/N0sp69"}], "annotations": [{"start": 113, "end": 117, "probability": 0.775, "type": "Other", "normalized_text": "COP22"}]}, "referenced_tweets": [{"type": "retweeted", "id": "3"}],"text": "sono il tweet numero 4", "id": "4", "created_at": "2016-12-31T23:53:31.000Z", "author_id": "d", "context_annotations": [{"domain": {"id": "25", "name": "Events", "description": ""}, "entity": {"id": "10040144401", "name": "Extreme Weather + Climate Change"}}, {"domain": {"id": "25", "name": "Events", "description": ""}, "entity": {"id": "10040529339", "name": "Discovery VCN - Earth"}}], "edit_history_tweet_ids": ["815345170468208642"]}
+{
+    "lang": "en",
+    "possibly_sensitive": false,
+    "public_metrics": {
+        "retweet_count": 8,
+        "reply_count": 0,
+        "like_count": 0,
+        "quote_count": 0,
+        "impression_count": 0
+    },
+    "conversation_id": "815345170468208642",
+    "entities": {
+        "mentions": [],
+        "hashtags": [
+            {
+                "start": 16,
+                "end": 30,
+                "tag": "CLIMATEchange"
+            },
+            {
+                "start": 31,
+                "end": 34,
+                "tag": "p2"
+            },
+            {
+                "start": 112,
+                "end": 118,
+                "tag": "COP22"
+            },
+            {
+                "start": 119,
+                "end": 124,
+                "tag": "tcot"
+            },
+            {
+                "start": 125,
+                "end": 128,
+                "tag": "2A"
+            }
+        ],
+        "urls": [
+            {
+                "start": 88,
+                "end": 111,
+                "url": "https://t.co/f5lY9m4sE2",
+                "expanded_url": "http://dlvr.it/N0sp69",
+                "display_url": "dlvr.it/N0sp69"
+            }
+        ],
+        "annotations": [
+            {
+                "start": 113,
+                "end": 117,
+                "probability": 0.775,
+                "type": "Other",
+                "normalized_text": "COP22"
+            }
+        ]
+    },
+    "text": "sono il tweet numero1 ",
+    "id": "1",
+    "created_at": "2016-12-31T23:53:31.000Z",
+    "author_id": "a",
+    "context_annotations": [
+        {
+            "domain": {
+                "id": "25",
+                "name": "Events",
+                "description": ""
+            },
+            "entity": {
+                "id": "10040144401",
+                "name": "Extreme Weather + Climate Change"
+            }
+        },
+        {
+            "domain": {
+                "id": "25",
+                "name": "Events",
+                "description": ""
+            },
+            "entity": {
+                "id": "10040529339",
+                "name": "Discovery VCN - Earth"
+            }
+        }
+    ],
+    "edit_history_tweet_ids": [
+        "815345170468208642"
+    ]
+}
+{
+    "lang": "en",
+    "possibly_sensitive": false,
+    "public_metrics": {
+        "retweet_count": 8,
+        "reply_count": 0,
+        "like_count": 0,
+        "quote_count": 0,
+        "impression_count": 0
+    },
+    "conversation_id": "815345170468208642",
+    "entities": {
+        "mentions": [],
+        "hashtags": [
+            {
+                "start": 16,
+                "end": 30,
+                "tag": "CLIMATEchange"
+            },
+            {
+                "start": 31,
+                "end": 34,
+                "tag": "p2"
+            },
+            {
+                "start": 112,
+                "end": 118,
+                "tag": "COP22"
+            },
+            {
+                "start": 119,
+                "end": 124,
+                "tag": "tcot"
+            },
+            {
+                "start": 125,
+                "end": 128,
+                "tag": "2A"
+            }
+        ],
+        "urls": [
+            {
+                "start": 88,
+                "end": 111,
+                "url": "https://t.co/f5lY9m4sE2",
+                "expanded_url": "http://dlvr.it/N0sp69",
+                "display_url": "dlvr.it/N0sp69"
+            }
+        ],
+        "annotations": [
+            {
+                "start": 113,
+                "end": 117,
+                "probability": 0.775,
+                "type": "Other",
+                "normalized_text": "COP22"
+            }
+        ]
+    },
+    "referenced_tweets": [
+        {
+            "type": "retweeted",
+            "id": "1"
+        }
+    ],
+    "text": "sono il tweet numero 2",
+    "id": "2",
+    "created_at": "2016-12-31T23:53:31.000Z",
+    "author_id": "b",
+    "context_annotations": [
+        {
+            "domain": {
+                "id": "25",
+                "name": "Events",
+                "description": ""
+            },
+            "entity": {
+                "id": "10040144401",
+                "name": "Extreme Weather + Climate Change"
+            }
+        },
+        {
+            "domain": {
+                "id": "25",
+                "name": "Events",
+                "description": ""
+            },
+            "entity": {
+                "id": "10040529339",
+                "name": "Discovery VCN - Earth"
+            }
+        }
+    ],
+    "edit_history_tweet_ids": [
+        "815345170468208642"
+    ]
+}
+{
+    "lang": "en",
+    "possibly_sensitive": false,
+    "public_metrics": {
+        "retweet_count": 8,
+        "reply_count": 0,
+        "like_count": 0,
+        "quote_count": 0,
+        "impression_count": 0
+    },
+    "conversation_id": "815345170468208642",
+    "entities": {
+        "mentions": [
+            {
+                "start": 3,
+                "end": 14,
+                "username": "donzo",
+                "id": "d"
+            }
+        ],
+        "hashtags": [
+            {
+                "start": 16,
+                "end": 30,
+                "tag": "CLIMATEchange"
+            },
+            {
+                "start": 31,
+                "end": 34,
+                "tag": "p2"
+            },
+            {
+                "start": 112,
+                "end": 118,
+                "tag": "COP22"
+            },
+            {
+                "start": 119,
+                "end": 124,
+                "tag": "tcot"
+            },
+            {
+                "start": 125,
+                "end": 128,
+                "tag": "2A"
+            }
+        ],
+        "urls": [
+            {
+                "start": 88,
+                "end": 111,
+                "url": "https://t.co/f5lY9m4sE2",
+                "expanded_url": "http://dlvr.it/N0sp69",
+                "display_url": "dlvr.it/N0sp69"
+            }
+        ],
+        "annotations": [
+            {
+                "start": 113,
+                "end": 117,
+                "probability": 0.775,
+                "type": "Other",
+                "normalized_text": "COP22"
+            }
+        ]
+    },
+    "referenced_tweets": [
+        {
+            "type": "retweeted",
+            "id": "1"
+        }
+    ],
+    "text": "sono il tweet numero 3",
+    "id": "3",
+    "created_at": "2016-12-31T23:53:31.000Z",
+    "author_id": "c",
+    "context_annotations": [
+        {
+            "domain": {
+                "id": "25",
+                "name": "Events",
+                "description": ""
+            },
+            "entity": {
+                "id": "10040144401",
+                "name": "Extreme Weather + Climate Change"
+            }
+        },
+        {
+            "domain": {
+                "id": "25",
+                "name": "Events",
+                "description": ""
+            },
+            "entity": {
+                "id": "10040529339",
+                "name": "Discovery VCN - Earth"
+            }
+        }
+    ],
+    "edit_history_tweet_ids": [
+        "815345170468208642"
+    ]
+}
+{
+    "lang": "en",
+    "possibly_sensitive": false,
+    "public_metrics": {
+        "retweet_count": 8,
+        "reply_count": 0,
+        "like_count": 0,
+        "quote_count": 0,
+        "impression_count": 0
+    },
+    "conversation_id": "815345170468208642",
+    "entities": {
+        "mentions": [],
+        "hashtags": [
+            {
+                "start": 16,
+                "end": 30,
+                "tag": "CLIMATEchange"
+            },
+            {
+                "start": 31,
+                "end": 34,
+                "tag": "p2"
+            },
+            {
+                "start": 112,
+                "end": 118,
+                "tag": "COP22"
+            },
+            {
+                "start": 119,
+                "end": 124,
+                "tag": "tcot"
+            },
+            {
+                "start": 125,
+                "end": 128,
+                "tag": "2A"
+            }
+        ],
+        "urls": [
+            {
+                "start": 88,
+                "end": 111,
+                "url": "https://t.co/f5lY9m4sE2",
+                "expanded_url": "http://dlvr.it/N0sp69",
+                "display_url": "dlvr.it/N0sp69"
+            }
+        ],
+        "annotations": [
+            {
+                "start": 113,
+                "end": 117,
+                "probability": 0.775,
+                "type": "Other",
+                "normalized_text": "COP22"
+            }
+        ]
+    },
+    "referenced_tweets": [
+        {
+            "type": "retweeted",
+            "id": "3"
+        }
+    ],
+    "text": "sono il tweet numero 4",
+    "id": "4",
+    "created_at": "2016-12-31T23:53:31.000Z",
+    "author_id": "d",
+    "context_annotations": [
+        {
+            "domain": {
+                "id": "25",
+                "name": "Events",
+                "description": ""
+            },
+            "entity": {
+                "id": "10040144401",
+                "name": "Extreme Weather + Climate Change"
+            }
+        },
+        {
+            "domain": {
+                "id": "25",
+                "name": "Events",
+                "description": ""
+            },
+            "entity": {
+                "id": "10040529339",
+                "name": "Discovery VCN - Earth"
+            }
+        }
+    ],
+    "edit_history_tweet_ids": [
+        "815345170468208642"
+    ]
+}
+
+
+8,
+"quote_count": 0
+},
+"possibly_sensitive": false,
+"entities": {
+"mentions": [
+    {
+        "start": 126,
+        "end": 141,
+        "username": "argatyredkites",
+        "id": "17185962"
+    }
+],
+"annotations": [
+    {
+        "start": 117,
+        "end": 124,
+        "probability": 0.9055,
+        "type": "Place",
+        "normalized_text": "knapdale"
+    },
+    {
+        "start": 179,
+        "end": 183,
+        "probability": 0.9228,
+        "type": "Other",
+        "normalized_text": "COP26"
+    }
+],
+"hashtags": [
+    {
+        "start": 5,
+        "end": 18,
+        "tag": "conservation"
+    },
+    {
+        "start": 178,
+        "end": 184,
+        "tag": "COP26"
+    }
+]
+},
+"id": "1477066583256317953",
+"created_at": "2021-12-31T23:58:10.000Z",
+"conversation_id": "1477066583256317953",
+"lang": "en",
+"context_annotations": [
+{
+    "domain": {
+        "id": "29",
+        "name": "Events [Entity Service]",
+        "description": "Real world events. "
+    },
+    "entity": {
+        "id": "1450764012677857294",
+        "name": "The UN Climate Change Conference 2021 has started \ud83c\udf0d"
+    }
+},
+{
+    "domain": {
+        "id": "131",
+        "name": "Unified Twitter Taxonomy",
+        "description": "A taxonomy of user interests. "
+    },
+    "entity": {
+        "id": "1248631349096767488",
+        "name": "Environmentalism"
+    }
+},
+{
+    "domain": {
+        "id": "131",
+        "name": "Unified Twitter Taxonomy",
+        "description": "A taxonomy of user interests. "
+    },
+    "entity": {
+        "id": "1265415402915393537",
+        "name": "Climate change"
+    }
+},
+{
+    "domain": {
+        "id": "131",
+        "name": "Unified Twitter Taxonomy",
+        "description": "A taxonomy of user interests. "
+    },
+    "entity": {
+        "id": "1278017316656082945",
+        "name": "Green living"
+    }
+}
+],
+"edit_history_tweet_ids": [
+"1477066583256317953"
+]
+}

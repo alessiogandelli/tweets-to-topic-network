@@ -5,23 +5,41 @@ import datetime
 
 
 
-file_tweets = '/Volumes/boot420/Users/data/climate_network/test/sample.json'
-file_user = '/Volumes/boot420/Users/data/climate_network/test/users_cop22.json'
+# file_tweets = '/Volumes/boot420/Users/data/climate_network/test/sample.json'
+# file_user = '/Volumes/boot420/Users/data/climate_network/test/users_cop22.json'
 
-file_tweets = '/Volumes/boot420/Users/data/climate_network/cop22/cop22.json'
-file_user = '/Volumes/boot420/Users/data/climate_network/cop22/cop22_user.json'
+# file_tweets = '/Volumes/boot420/Users/data/climate_network/cop22/cop22.json'
+# file_user = '/Volumes/boot420/Users/data/climate_network/cop22/cop22_user.json'
 
+file_tweets = '/Users/alessiogandelli/data/cop26/cop26.json'
+file_user = '/Users/alessiogandelli/data/cop26/users_cop26.json'
 
 start = datetime.datetime.now()
 
 p = Pipeline(file_tweets, file_user)
 p.process_json()
 print('json processed in ', datetime.datetime.now()-start)
-p.get_topics()
+p.get_topics(name = 'bert')
 print('topics extracted in ', datetime.datetime.now()-start)
 
 
+p.create_network(p.df_retweets_labeled, 'retweets')
+
 # %%
+
+
+# if author name is none put author id 
+p.df_retweets_labeled['author_name'] = p.df_retweets_labeled['author_name'].fillna(p.df_retweets_labeled['author_id'])
+
+
+
+
+
+
+# %%
+
+
+
 import re 
 
 name = 'openai'

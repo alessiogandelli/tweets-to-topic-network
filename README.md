@@ -138,3 +138,15 @@ Processing around 400 tweets with the hashtag #cop22, this took around 3 hours o
 - csv/pkl tweets: 236 MB
 - retweet gml network: 234 MB
 - projected gml network: 19 MB
+
+## cop 26 
+macbook pro 14 
+
+- json tweets: 14.3 GB (requires a lot of ram)
+- csv/pkl tweets: 1.79 GB
+- temporal text network: 900 MB
+- projected multilayer: 84 MB
+
+2 h for processing the json file 
+4 h for extracting topics 
+18 h for creating the networks 

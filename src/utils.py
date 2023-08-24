@@ -16,6 +16,7 @@ from langchain import PromptTemplate
 from langchain.llms import OpenAI
 from dotenv import load_dotenv
 from langchain.chains import LLMChain
+from sentence_transformers import SentenceTransformer
 import json
 import openai
 load_dotenv()
@@ -145,23 +146,23 @@ class Pipeline:
             with jsonlines.open(self.file_tweets) as reader: # open file
                 for obj in reader:
                     if obj.get('attachments') is  None : # avoid tweets with attachments
-                        tweets[obj['id']] = {'author': obj['author_id'], 
-                                            'author_name': users[obj['author_id']]['username'],
-                                            'text': obj['text'], 
-                                            'date': obj['created_at'],
-                                            'lang':obj['lang'] ,
-                                            'reply_count': obj['public_metrics']['reply_count'], 
-                                            'retweet_count': obj['public_metrics']['retweet_count'], 
-                                            'like_count': obj['public_metrics']['like_count'], 
-                                            'quote_count': obj['public_metrics']['quote_count'],
-                                            'impression_count': obj['public_metrics']['impression_count'],
-                                            'conversation_id': obj['conversation_id'] if 'conversation_id' in obj else None,
-                                            'referenced_type': obj['referenced_tweets'][0]['type'] if 'referenced_tweets' in obj else None,
-                                            'referenced_id': obj['referenced_tweets'][0]['id'] if 'referenced_tweets' in obj else None,
-                                            'mentions_name': [ann.get('username') for ann in obj.get('entities',  {}).get('mentions', [])],
-                                            'mentions_id': [ann.get('id') for ann in obj.get('entities',  {}).get('mentions', [])],
-                                        # 'context_annotations': [ann.get('entity').get('name') for ann in obj.get('context_annotations', [])]
-                                        }
+                        tweets[obj.get('id', 0)] = {'author': obj['author_id'], 
+                                                        'author_name': users.get(obj['author_id'], {}).get('username'),
+                                                        'text': obj.get('text', ''), 
+                                                        'date': obj.get('created_at', ''),
+                                                        'lang':obj.get('lang', ''),
+                                                        'reply_count': obj.get('public_metrics', {}).get('reply_count', 0), 
+                                                        'retweet_count': obj.get('public_metrics', {}).get('retweet_count', 0), 
+                                                        'like_count': obj.get('public_metrics', {}).get('like_count', 0), 
+                                                        'quote_count': obj.get('public_metrics', {}).get('quote_count', 0),
+                                                        #'impression_count': obj['public_metrics']['impression_count'],
+                                                        'conversation_id': obj.get('conversation_id', None),
+                                                        'referenced_type': obj.get('referenced_tweets', [{}])[0].get('type', None),
+                                                        'referenced_id': obj.get('referenced_tweets', [{}])[0].get('id', None),
+                                                        'mentions_name': [ann.get('username', '') for ann in obj.get('entities',  {}).get('mentions', [])],
+                                                        'mentions_id': [ann.get('id', '') for ann in obj.get('entities',  {}).get('mentions', [])],
+                                                    # 'context_annotations': [ann.get('entity').get('name') for ann in obj.get('context_annotations', [])]
+                                                    }
                     else:
                         attachments.append(obj)
 
@@ -178,6 +179,7 @@ class Pipeline:
             df_tweets.to_pickle(file)
         
         df_tweets = df_tweets[df_tweets['lang'] == 'en'] # consider only english tweets
+        df_tweets['author_name'] = df_tweets['author_name'].fillna(df_tweets['author'])
         
         # create the dataframes, devide the tweets in original, retweets, quotes and replies
         self.df_tweets = df_tweets
@@ -221,11 +223,11 @@ class Pipeline:
             
             if(name == 'openai'):
                 embs = openai.Embedding.create(input = docs, model="text-embedding-ada-002")['data']
-                embedder = None
+                self.embedder = None
                 embeddings = np.array([np.array(emb['embedding']) for emb in embs])
             else:
-                embedder = SentenceTransformer(self.name)
-                embeddings = self.embedder.encode(self.docs)
+                self.embedder = SentenceTransformer('all-MiniLM-L6-v2')
+                embeddings = self.embedder.encode(docs)
 
             # fit model
             
@@ -237,7 +239,7 @@ class Pipeline:
                                 vectorizer_model =   vectorizer_model,
                                 ctfidf_model      =   ctfidf_model,
                                 nr_topics        =  'auto',
-                                min_topic_size   =   max(int(len(docs)/100),10),
+                                min_topic_size   =   max(int(len(docs)/1000),10),
                                 embedding_model  = self.embedder,
                             )
 
@@ -269,11 +271,13 @@ class Pipeline:
         self.df_quotes['topic'] = self.df_quotes['referenced_id']
         self.df_reply['topic'] = self.df_reply['referenced_id']
 
+        print('merge dataframes')
         # merge the dataframes
         self.df_retweets_labeled = pd.concat([self.df_original_labeled, self.df_retweets])
         self.df_quotes_labeled = pd.concat([self.df_original_labeled, self.df_quotes])
         self.df_reply_labeled = pd.concat([self.df_original_labeled, self.df_reply])
 
+        print('resolve topics')
         # this is required for propagating the topic to the retweets
         def resolve_topic(df, row_id):
             if isinstance(row_id, int): # the topic 
@@ -284,7 +288,8 @@ class Pipeline:
                     return resolve_topic(df, topic)
                 except: # if there is not the referenced tweet we discard the tweet
                     return None
-        
+        print('topic resolved')
+
         self.df_retweets_labeled['topic'] = self.df_retweets_labeled.apply(lambda row: resolve_topic(self.df_retweets_labeled, row['topic']), axis=1)
         self.df_quotes_labeled['topic'] = self.df_quotes_labeled.apply(lambda row: resolve_topic(self.df_quotes_labeled, row['topic']), axis=1)
         self.df_reply_labeled['topic'] = self.df_reply_labeled.apply(lambda row: resolve_topic(self.df_reply_labeled, row['topic']), axis=1)
@@ -307,7 +312,8 @@ class Pipeline:
         """
         Create a network from the dataframe of tweets and save it in a gml file
         """
-
+        # if author name is none put author id 
+        
 
         print('create network ' + title)
        
@@ -523,3 +529,4 @@ class Pipeline:
 
 
 # %%
+

@@ -27,13 +27,20 @@ chain = LLMChain(llm=llm, prompt=prompt)
 
 
 
+
+#%%
+from bertopic import BERTopic
+
+loaded_model = BERTopic.load("/Users/alessiogandelli/data/cop26/cache/model_cop26.pkl")
+
+
 # %%
-topics = list(p.model.get_topic_info()['Topic']) # get inferred topics 
-topic_words = p.model.get_topics() # get words for each topic
+topics = list(loaded_model.get_topic_info()['Topic']) # get inferred topics 
+topic_words = loaded_model.get_topics() # get words for each topic
 labels = {}
 
 for topic in topics:
-    tweets = p.model.get_representative_docs(topic)
+    tweets = loaded_model.get_representative_docs(topic)
     words = [word[0] for word in topic_words[topic]]
     labels[topic] = chain.run(words=words, tweet1=tweets[0], tweet2=tweets[1], tweet3=tweets[2])
 
@@ -48,7 +55,7 @@ labels
 # save labels to file 
 import json
 
-with open('/Volumes/boot420/Users/data/climate_network/cop22/cache/labels.json', 'w') as fp:
+with open('/Users/alessiogandelli/data/cop26/cache/labels.json', 'w') as fp:
     json.dump(labels, fp)
     
 
