@@ -4,7 +4,6 @@ import sys
 import datetime
 
 
-
 # file_tweets = '/Volumes/boot420/Users/data/climate_network/test/sample.json'
 # file_user = '/Volumes/boot420/Users/data/climate_network/test/users_cop22.json'
 

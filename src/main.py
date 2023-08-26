@@ -1,5 +1,5 @@
 #%%
-from utils import Pipeline
+from tweets_to_network import Tweets_to_network
 import sys 
 import datetime
 
@@ -14,7 +14,7 @@ file_user = sys.argv[2]
 
 start = datetime.datetime.now()
 
-p = Pipeline(file_tweets, file_user)
+p = Tweets_to_network(file_tweets, file_user)
 p.process_json()
 print('json processed in ', datetime.datetime.now()-start)
 p.get_topics()

@@ -26,7 +26,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 #%%
-class Pipeline:
+class Tweets_to_network:
     """
     A class used to represent the entire pipeline from json to graph
 
