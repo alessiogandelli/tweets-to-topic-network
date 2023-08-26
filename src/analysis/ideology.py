@@ -69,8 +69,12 @@ def get_polarization_by_layer(n_influencers = 30, n = 2):
 
 
         # create matrix and apply latent ideology
-        li_matrix = li(connection_df)
-        df1, df2 = li_matrix.apply_method(n=n,targets='user', sources='influencer')
+        try:
+            li_matrix = li(connection_df)
+            df1, df2 = li_matrix.apply_method(n=n,targets='user', sources='influencer')
+        except:
+            print('Layer ', l, ' has too few data to be analyzed with latent ideology')
+            continue
 
 
         # perform dip test on scores
@@ -78,7 +82,7 @@ def get_polarization_by_layer(n_influencers = 30, n = 2):
 
         dip_res = diptest.diptest(test)
         
-        if dip_res[1] < 0.05:
+        if dip_res[1] < 0.05 and l != -1:
             res[l] = (dip_res, df1, df2)
             res = {int(float(k)): v for k, v in res.items()}
         else:
@@ -214,17 +218,18 @@ def create_plots(topics, title,only_influencers=False):
 
 n_influencers = 100
 
-res = get_polarization_by_layer(n_influencers = n_influencers)
+res = get_polarization_by_layer(n_influencers = n_influencers, n=3)
 sorted_topic_label = plot_dip_test(res)
 
-
+#%%
 # Example usage
 topics_pol = [t[0] for t in sorted_topic_label[:5]]
 topics_not_pol = [t[0] for t in sorted_topic_label[-5:]]
+topics_not_pol.reverse()
 
 create_plots(topics_pol, 'most polarized topics' + ' - ' + str(n_influencers) + ' influencers')
-create_plots(topics_not_pol, 'least polarized topics' + ' - ' + str(n_influencers) + ' influencers')
 create_plots(topics_pol,'most polarized topics' + ' - ' + str(n_influencers) + ' influencers',only_influencers=True)
+create_plots(topics_not_pol, 'least polarized topics' + ' - ' + str(n_influencers) + ' influencers')
 create_plots(topics_not_pol,'least polarized topics'+' - ' + str(n_influencers) + ' influencers', only_influencers=True)
 
 # %%
