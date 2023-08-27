@@ -7,9 +7,8 @@ import datetime
 file_tweets = sys.argv[1]
 file_user = sys.argv[2]
 
-#file_tweets = '/Volumes/boot420/Users/data/climate_network/cop22/cop22.json'
-#file_user = '/Volumes/boot420/Users/data/climate_network/cop22/cop22_user.json'
- #%%
+file_tweets = '/Users/alessiogandelli/data/cop22/cop22.json'
+file_user = '/Users/alessiogandelli/data/cop22/users_cop22.json'
 
 
 start = datetime.datetime.now()

@@ -1,5 +1,5 @@
 #%%
-from utils import Pipeline
+from tweets_to_network import Tweets_to_network
 import sys 
 import datetime
 
@@ -10,12 +10,12 @@ import datetime
 # file_tweets = '/Volumes/boot420/Users/data/climate_network/cop22/cop22.json'
 # file_user = '/Volumes/boot420/Users/data/climate_network/cop22/cop22_user.json'
 
-file_tweets = '/Users/alessiogandelli/data/cop26/cop26.json'
-file_user = '/Users/alessiogandelli/data/cop26/users_cop26.json'
+file_tweets = '/Users/alessiogandelli/dev/tweets-to-topic-network/data/toy.json'
+file_user = '/Users/alessiogandelli/dev/tweets-to-topic-network/data/toy_users.json'
 
 start = datetime.datetime.now()
 
-p = Pipeline(file_tweets, file_user)
+p = Tweets_to_network(file_tweets, file_user)
 p.process_json()
 print('json processed in ', datetime.datetime.now()-start)
 p.get_topics(name = 'bert')
@@ -30,7 +30,8 @@ p.create_network(p.df_retweets_labeled, 'retweets')
 # if author name is none put author id 
 p.df_retweets_labeled['author_name'] = p.df_retweets_labeled['author_name'].fillna(p.df_retweets_labeled['author_id'])
 
-
+# list with cavich names
+cavich_names = [1,2,3,4]
 
 
 

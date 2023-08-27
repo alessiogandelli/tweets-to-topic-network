@@ -101,6 +101,9 @@ diptest = "^0.5.2"
 python-louvain = "^0.16"
 
 
+[tool.poetry.group.dev.dependencies]
+jupyter = "^1.0.0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
