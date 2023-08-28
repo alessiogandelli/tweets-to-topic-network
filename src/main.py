@@ -10,13 +10,15 @@ file_user = sys.argv[2]
 file_tweets = '/Users/alessiogandelli/data/cop22/cop22.json'
 file_user = '/Users/alessiogandelli/data/cop22/users_cop22.json'
 
+#%%
 
 start = datetime.datetime.now()
+print('start at ', start)
 
 p = Tweets_to_network(file_tweets, file_user)
 p.process_json()
 print('json processed in ', datetime.datetime.now()-start)
-p.get_topics()
+p.get_topics(name = 'bert')
 print('topics extracted in ', datetime.datetime.now()-start)
 
 

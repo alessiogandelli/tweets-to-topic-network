@@ -82,7 +82,7 @@ class Tweets_to_network:
 
     """
 
-    def __init__(self,  file_tweets, file_user):
+    def __init__(self,  file_tweets, file_user, n_cop):
         """
 
         Parameters
@@ -114,7 +114,7 @@ class Tweets_to_network:
         self.ml_network = ml.empty()
         self.topic_labels = None
         self.text = None
-
+        self.n_cop = n_cop
 
 
 
@@ -161,6 +161,7 @@ class Tweets_to_network:
                                                         'referenced_id': obj.get('referenced_tweets', [{}])[0].get('id', None),
                                                         'mentions_name': [ann.get('username', '') for ann in obj.get('entities',  {}).get('mentions', [])],
                                                         'mentions_id': [ann.get('id', '') for ann in obj.get('entities',  {}).get('mentions', [])],
+                                                        'cop':  self.n_cop
                                                     # 'context_annotations': [ann.get('entity').get('name') for ann in obj.get('context_annotations', [])]
                                                     }
                     else:
@@ -218,8 +219,7 @@ class Tweets_to_network:
             docs = [re.sub(r"@\S+", "", doc) for doc in docs] #  remove mentions 
             docs = [re.sub(r"#\S+", "", doc) for doc in docs] #  remove hashtags
             docs = [re.sub(r"\n", "", doc) for doc in docs] #  remove new lines
-            #strip 
-            docs = [doc.strip() for doc in docs]
+            docs = [doc.strip() for doc in docs]#strip 
             
             if(name == 'openai'):
                 embs = openai.Embedding.create(input = docs, model="text-embedding-ada-002")['data']
@@ -308,7 +308,7 @@ class Tweets_to_network:
 
         return df_cop
 
-    def create_network(self, df_tweets, title):
+    def create_network(self, df_tweets, title, project = True):
         """
         Create a network from the dataframe of tweets and save it in a gml file
         """
@@ -375,10 +375,16 @@ class Tweets_to_network:
         nx.write_gml(g, filename)
         print('network created at', filename)
 
-        self.project_network(path = filename , title = title)
+        if project:
+            self.project_network(path = filename , title = title)
+
         self.text = x
 
         return (g, x, t)
+    
+
+    def retweet_network(self, path = None, nx_graph = None, title = None):
+        return 0
 
     def project_network(self, path = None, nx_graph = None, title = None):
         """
