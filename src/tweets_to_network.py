@@ -304,9 +304,9 @@ class Tweets_to_network:
                 except: # if there is not the referenced tweet we discard the tweet
                     return None
 
-        self.df_retweets_labeled['topic'] = self.df_retweets_labeled.apply(lambda row: resolve_topic(self.df_retweets_labeled, row['topic']), axis=1)
-        self.df_quotes_labeled['topic'] = self.df_quotes_labeled.apply(lambda row: resolve_topic(self.df_quotes_labeled, row['topic']), axis=1)
-        self.df_reply_labeled['topic'] = self.df_reply_labeled.apply(lambda row: resolve_topic(self.df_reply_labeled, row['topic']), axis=1)
+        self.df_retweets_labeled['topic'] = self.df_retweets_labeled['topic'].map(lambda row: resolve_topic(self.df_retweets_labeled, row))
+        self.df_quotes_labeled['topic'] = self.df_quotes_labeled['topic'].map(lambda row: resolve_topic(self.df_quotes_labeled, row))
+        self.df_reply_labeled['topic'] = self.df_reply_labeled['topic'].map(lambda row: resolve_topic(self.df_reply_labeled, row))
 
         print('topic resolved', datetime.datetime.now() - time)
 
