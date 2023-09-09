@@ -192,6 +192,7 @@ class Tweets_to_network:
         # create the dataframes, devide the tweets in original, retweets, quotes and replies
         self.df_tweets = df_tweets
         self.df_original = df_tweets[df_tweets['referenced_type'].isna()]
+        self.df_original_no_retweets = self.df_original[self.df_original['retweet_count'] != 0]
         self.df_retweets = df_tweets[df_tweets['referenced_type'] == 'retweeted']
         self.df_quotes = df_tweets[df_tweets['referenced_type'] == 'quoted']
         self.df_reply = df_tweets[df_tweets['referenced_type'] == 'replied_to']
