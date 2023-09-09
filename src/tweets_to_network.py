@@ -115,6 +115,7 @@ class Tweets_to_network:
         self.topic_labels = None
         self.text = None
         self.n_cop = n_cop
+        self.df_original_influencers = None
 
 
 
@@ -125,6 +126,11 @@ class Tweets_to_network:
 
         """
         file = os.path.join(self.path_cache,'tweets_'+self.name+'.pkl')
+        file_original = os.path.join(self.path_cache,'tweets_original_'+self.name+'.pkl')
+
+        if os.path.exists(file_original):
+            self.df_original_influencers = pd.read_pickle(file_original)
+            print('using cached file for original influencer processing')
 
         # if pkl file tweets_cop22 exists, load it
         if os.path.exists(file):
@@ -192,11 +198,13 @@ class Tweets_to_network:
 
         return df_tweets
 
-    def get_topics(self, name = 'openai'):
+    def get_topics(self, name = 'openai', df = None):
         """
         Get the topics of the original tweets
            
         """
+        if df is None:
+            df = self.df_original
 
         file = os.path.join(self.path_cache, 'tweets_'+self.name+'_topics.pkl')
 
@@ -212,7 +220,7 @@ class Tweets_to_network:
         else:
             print('running topic modeling')
 
-            df_cop = self.df_original
+            df_cop = df
             # prepare documents for topic modeling
             docs = df_cop['text'].tolist()
             docs = [re.sub(r"http\S+", "", doc) for doc in docs]
@@ -382,8 +390,52 @@ class Tweets_to_network:
 
         return (g, x, t)
     
-
     def retweet_network(self, df = None):
+        if df is None:
+            df = self.df_retweets_labeled
+        
+        G = nx.DiGraph()
+        
+        authors = df['author'].unique()
+        G.add_nodes_from(authors)
+
+        for i, row in df.iterrows():
+            ref_id = row['referenced_id']
+
+            if ref_id is not None:
+            # if the edge already exists add 1 to the weight
+                if G.has_edge(row['author'], df.loc[str(ref_id)]['author']):
+                    G[row['author']][df.loc[str(ref_id)]['author']]['weight'] += 1
+                else:
+                    G.add_edge(row['author'], df.loc[str(ref_id)]['author'], weight=1)
+            
+        self.retweet_graph = G
+
+        return G
+    
+    def get_n_influencers(self, n = 1000):
+        '''
+        Get the top n most retweeted users  of the network and get their original tweets
+        '''
+
+        indegree = self.retweet_graph.in_degree()
+
+        indegree_df = pd.DataFrame(indegree, columns = ['author', 'indegree']).set_index('author').sort_values(by = 'indegree', ascending = False)
+        rt_count = self.df_retweets_labeled.groupby('author')[['author_name', 'retweet_count']].sum()
+
+        #merge the two df
+        indegree_df = indegree_df.merge(rt_count, left_index = True, right_index = True)
+
+        influencers = indegree_df.head(n).index
+
+        #get df_original of top 1000
+        infleuncers_df = self.df_original[self.df_original['author'].isin(influencers)]
+
+        return infleuncers_df
+
+
+
+    def retweet_network_ml(self, df = None):
         if df is None:
             df = self.df_retweets_labeled
         

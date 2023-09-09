@@ -2,7 +2,7 @@
 from tweets_to_network import Tweets_to_network
 import sys 
 import datetime
-
+import uunet.multinet as ml
 
 # file_tweets = '/Volumes/boot420/Users/data/climate_network/test/sample.json'
 # file_user = '/Volumes/boot420/Users/data/climate_network/test/users_cop22.json'
@@ -30,8 +30,7 @@ p.create_network(p.df_retweets_labeled, 'retweets')
 # if author name is none put author id 
 p.df_retweets_labeled['author_name'] = p.df_retweets_labeled['author_name'].fillna(p.df_retweets_labeled['author_id'])
 
-# list with cavich names
-cavich_names = [1,2,3,4]
+
 
 
 
