@@ -19,6 +19,7 @@ from langchain.chains import LLMChain
 from sentence_transformers import SentenceTransformer
 import json
 import openai
+import datetime
 load_dotenv()
 
 os.environ['TOKENIZERS_PARALLELISM'] = 'false' # to avoid a warning 
@@ -203,6 +204,8 @@ class Tweets_to_network:
         Get the topics of the original tweets
            
         """
+        time = datetime.datetime.now()
+
         if df is None:
             df = self.df_original
 
@@ -273,19 +276,23 @@ class Tweets_to_network:
             #save model 
             model.save(os.path.join(self.path_cache,'model_'+self.name+'.pkl'))
 
+        print('topics created in ', datetime.datetime.now() - time)
+
         # add topics label to the originaldataframe and for the not original tweet put the reference of the original tweet in that field 
         self.df_original_labeled = df_cop
         self.df_retweets['topic'] = self.df_retweets['referenced_id']
         self.df_quotes['topic'] = self.df_quotes['referenced_id']
         self.df_reply['topic'] = self.df_reply['referenced_id']
 
-        print('merge dataframes')
+
+
+        print('added topics in ', datetime.datetime.now() - time)
         # merge the dataframes
         self.df_retweets_labeled = pd.concat([self.df_original_labeled, self.df_retweets])
         self.df_quotes_labeled = pd.concat([self.df_original_labeled, self.df_quotes])
         self.df_reply_labeled = pd.concat([self.df_original_labeled, self.df_reply])
 
-        print('resolve topics')
+        print('merged topics in ', datetime.datetime.now() - time)
         # this is required for propagating the topic to the retweets
         def resolve_topic(df, row_id):
             if isinstance(row_id, int): # the topic 
@@ -296,24 +303,31 @@ class Tweets_to_network:
                     return resolve_topic(df, topic)
                 except: # if there is not the referenced tweet we discard the tweet
                     return None
-        print('topic resolved')
 
         self.df_retweets_labeled['topic'] = self.df_retweets_labeled.apply(lambda row: resolve_topic(self.df_retweets_labeled, row['topic']), axis=1)
         self.df_quotes_labeled['topic'] = self.df_quotes_labeled.apply(lambda row: resolve_topic(self.df_quotes_labeled, row['topic']), axis=1)
         self.df_reply_labeled['topic'] = self.df_reply_labeled.apply(lambda row: resolve_topic(self.df_reply_labeled, row['topic']), axis=1)
+
+        print('topic resolved', datetime.datetime.now() - time)
+
 
         # remove the tweets that have not a topic
         self.df_retweets_labeled = self.df_retweets_labeled[self.df_retweets_labeled['topic'].notna()]
         self.df_quotes_labeled = self.df_quotes_labeled[self.df_quotes_labeled['topic'].notna()]
         self.df_reply_labeled = self.df_reply_labeled[self.df_reply_labeled['topic'].notna()]
 
+        print('removed tweets without topic', datetime.datetime.now() - time)
+
         # topic to int 
         self.df_retweets_labeled['topic'] = self.df_retweets_labeled['topic'].astype(int)
         self.df_quotes_labeled['topic'] = self.df_quotes_labeled['topic'].astype(int)
         self.df_reply_labeled['topic'] = self.df_reply_labeled['topic'].astype(int)
 
+        print('topic to int', datetime.datetime.now() - time)
+        # save df_retwets_labeled
+        self.df_retweets_labeled.to_pickle(os.path.join(self.path_cache,'retweets_labeled_'+self.name+'.pkl'))
 
-
+        print('saved df_retweets_labeled', datetime.datetime.now() - time)
         return df_cop
 
     def create_network(self, df_tweets, title, project = True):
@@ -392,7 +406,13 @@ class Tweets_to_network:
     
     def retweet_network(self, df = None):
         if df is None:
-            df = self.df_retweets_labeled
+            try:
+                df = self.df_retweets_labeled
+            except:
+                self.get_topics(name = 'bert')
+                df = self.df_retweets_labeled
+        
+
         
         G = nx.DiGraph()
         
@@ -410,6 +430,13 @@ class Tweets_to_network:
                     G.add_edge(row['author'], df.loc[str(ref_id)]['author'], weight=1)
             
         self.retweet_graph = G
+
+        # save GML file
+        if not os.path.exists(self.graph_dir):
+            os.makedirs(self.graph_dir)
+
+        filename = os.path.join(self.graph_dir,self.name+'_retweet_network.gml')
+        nx.write_gml(G, filename)
 
         return G
     
@@ -462,6 +489,14 @@ class Tweets_to_network:
 
         self.ml_network = ml_network
         
+        # save GML file
+        if not os.path.exists(self.graph_dir):
+            os.makedirs(self.graph_dir)
+
+        filename = os.path.join(self.graph_dir,self.name+'_retweet_network_ml.gml')
+        ml.write(ml_network, file = filename)
+
+
         return ml_network
 
     def project_network(self, path = None, nx_graph = None, title = None):

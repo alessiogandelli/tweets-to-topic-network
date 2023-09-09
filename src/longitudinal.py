@@ -30,12 +30,12 @@ cop26.process_json()
 
 cop22.get_topics(name = 'bert')
 cop21.get_topics(name = 'bert')
-cop26.get_topics(name = 'bert')
+#cop26.get_topics(name = 'bert')
 
 cop22.retweet_network()
 cop21.retweet_network()
-cop26.retweet_network()
-
+#cop26.retweet_network()
+#%%
 inf_cop22 = cop22.get_n_influencers()
 inf_cop21 = cop21.get_n_influencers()
 inf_cop26 = cop26.get_n_influencers()
