@@ -28,32 +28,29 @@ cop22.process_json()
 cop21.process_json()
 cop26.process_json()
 
-cop22.get_topics(name = 'bert')
+cop26.get_topics(name = 'bert')
 cop21.get_topics(name = 'bert')
-#cop26.get_topics(name = 'bert')
+cop22.get_topics(name = 'bert')
 
-cop22.retweet_network()
-cop21.retweet_network()
-#cop26.retweet_network()
-#%%
-inf_cop22 = cop22.get_n_influencers()
-inf_cop21 = cop21.get_n_influencers()
-inf_cop26 = cop26.get_n_influencers()
+
 
 
 
 #%%
-
+# except column topics
+cop26_tweets= cop26.df_retweets_labeled.drop(columns=['topic'])
+cop21_tweets= cop21.df_retweets_labeled.drop(columns=['topic'])
+cop22_tweets= cop22.df_retweets_labeled.drop(columns=['topic'])
 
 # %%
 
-# merge the three df
-cop = pd.concat([inf_cop22, inf_cop21, inf_cop26])
+# i'm saving these in the cop2x cache so i can artifically create the cache 
 
-#save csv 
+cop = pd.concat([cop21.df_original_no_retweets, cop22.df_original_no_retweets, cop26.df_original_no_retweets])
 cop.to_pickle('/Users/alessiogandelli/data/cop2x/cache/tweets_original_cop.pkl')
 
-
+cop_all_tweets = pd.concat([cop21_tweets, cop22_tweets, cop26_tweets])
+cop_all_tweets.to_pickle('/Users/alessiogandelli/data/cop2x/cache/tweets_cop2x.pkl')
 
 # %%
 cop2x = Tweets_to_network(tweets_cop2x, users_cop2x, 'cop2x')
@@ -61,5 +58,7 @@ cop2x.process_json()
 
 
 #%%
-cop2x.get_topics(name = 'bert', df=cop2x.df_original_influencers)
+cop2x.get_topics(name = 'bert', df=cop2x.df_original_no_retweets)
 
+
+# %%

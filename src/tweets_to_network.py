@@ -282,47 +282,54 @@ class Tweets_to_network:
         # add topics label to the originaldataframe and for the not original tweet put the reference of the original tweet in that field 
         self.df_original_labeled = df_cop
         self.df_retweets['topic'] = self.df_retweets['referenced_id']
-        self.df_quotes['topic'] = self.df_quotes['referenced_id']
-        self.df_reply['topic'] = self.df_reply['referenced_id']
+        #self.df_quotes['topic'] = self.df_quotes['referenced_id']
+        #self.df_reply['topic'] = self.df_reply['referenced_id']
 
 
 
         print('added topics in ', datetime.datetime.now() - time)
         # merge the dataframes
         self.df_retweets_labeled = pd.concat([self.df_original_labeled, self.df_retweets])
-        self.df_quotes_labeled = pd.concat([self.df_original_labeled, self.df_quotes])
-        self.df_reply_labeled = pd.concat([self.df_original_labeled, self.df_reply])
+        #self.df_quotes_labeled = pd.concat([self.df_original_labeled, self.df_quotes])
+        #self.df_reply_labeled = pd.concat([self.df_original_labeled, self.df_reply])
 
         print('merged topics in ', datetime.datetime.now() - time)
         # this is required for propagating the topic to the retweets
         def resolve_topic(df, row_id):
-            if isinstance(row_id, int): # the topic 
-                return int(row_id)
-            else: # the pointer 
-                try:
-                    topic = df.loc[row_id, 'topic']
-                    return resolve_topic(df, topic)
-                except: # if there is not the referenced tweet we discard the tweet
-                    return None
+            # Create a mask to filter rows with integer topic IDs
+            mask = df['topic'].apply(lambda x: isinstance(x, int))
+            # Get the indices of rows with integer topic IDs
+            indices = df[mask].index
 
-        self.df_retweets_labeled['topic'] = self.df_retweets_labeled['topic'].map(lambda row: resolve_topic(self.df_retweets_labeled, row))
-        self.df_quotes_labeled['topic'] = self.df_quotes_labeled['topic'].map(lambda row: resolve_topic(self.df_quotes_labeled, row))
-        self.df_reply_labeled['topic'] = self.df_reply_labeled['topic'].map(lambda row: resolve_topic(self.df_reply_labeled, row))
+            # Iterate over the indices of rows with non-integer topic IDs
+            for index in indices:
+                while not isinstance(df.loc[index, 'topic'], int):
+                    topic = df.loc[index, 'topic']
+                    if topic in indices:
+                        df.loc[index, 'topic'] = df.loc[topic, 'topic']
+                    else:
+                        df.loc[index, 'topic'] = None
+
+            return df['topic']
+
+        self.df_retweets_labeled['topic'] = resolve_topic(self.df_retweets_labeled, self.df_retweets_labeled['topic'])
+        #self.df_quotes_labeled['topic'] = self.df_quotes_labeled['topic'].map(lambda row: resolve_topic(self.df_quotes_labeled, row))
+        #self.df_reply_labeled['topic'] = self.df_reply_labeled['topic'].map(lambda row: resolve_topic(self.df_reply_labeled, row))
 
         print('topic resolved', datetime.datetime.now() - time)
 
 
         # remove the tweets that have not a topic
         self.df_retweets_labeled = self.df_retweets_labeled[self.df_retweets_labeled['topic'].notna()]
-        self.df_quotes_labeled = self.df_quotes_labeled[self.df_quotes_labeled['topic'].notna()]
-        self.df_reply_labeled = self.df_reply_labeled[self.df_reply_labeled['topic'].notna()]
+       # self.df_quotes_labeled = self.df_quotes_labeled[self.df_quotes_labeled['topic'].notna()]
+        #self.df_reply_labeled = self.df_reply_labeled[self.df_reply_labeled['topic'].notna()]
 
         print('removed tweets without topic', datetime.datetime.now() - time)
 
         # topic to int 
         self.df_retweets_labeled['topic'] = self.df_retweets_labeled['topic'].astype(int)
-        self.df_quotes_labeled['topic'] = self.df_quotes_labeled['topic'].astype(int)
-        self.df_reply_labeled['topic'] = self.df_reply_labeled['topic'].astype(int)
+        #self.df_quotes_labeled['topic'] = self.df_quotes_labeled['topic'].astype(int)
+        #self.df_reply_labeled['topic'] = self.df_reply_labeled['topic'].astype(int)
 
         print('topic to int', datetime.datetime.now() - time)
         # save df_retwets_labeled
