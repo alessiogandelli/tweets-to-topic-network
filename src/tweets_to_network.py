@@ -282,37 +282,49 @@ class Tweets_to_network:
         # add topics label to the originaldataframe and for the not original tweet put the reference of the original tweet in that field 
         self.df_original_labeled = df_cop
         self.df_retweets['topic'] = self.df_retweets['referenced_id']
-        #self.df_quotes['topic'] = self.df_quotes['referenced_id']
-        #self.df_reply['topic'] = self.df_reply['referenced_id']
+        self.df_quotes['topic'] = self.df_quotes['referenced_id']
+        self.df_reply['topic'] = self.df_reply['referenced_id']
 
 
 
         print('added topics in ', datetime.datetime.now() - time)
         # merge the dataframes
         self.df_retweets_labeled = pd.concat([self.df_original_labeled, self.df_retweets])
-        #self.df_quotes_labeled = pd.concat([self.df_original_labeled, self.df_quotes])
-        #self.df_reply_labeled = pd.concat([self.df_original_labeled, self.df_reply])
+        self.df_quotes_labeled = pd.concat([self.df_original_labeled, self.df_quotes])
+        self.df_reply_labeled = pd.concat([self.df_original_labeled, self.df_reply])
 
         print('merged topics in ', datetime.datetime.now() - time)
         # this is required for propagating the topic to the retweets
-        def resolve_topic(df, row_id):
-            # Create a mask to filter rows with integer topic IDs
-            mask = df['topic'].apply(lambda x: isinstance(x, int))
-            # Get the indices of rows with integer topic IDs
-            indices = df[mask].index
+        # def resolve_topic(df, row_id,):
+        #     if row_id is not  None:
+        #         if  isinstance(row_id, int): # the topic 
+        #             return int(row_id)
+        #         else: # the pointer 
+        #             try:
+        #                 topic = df.loc[row_id, 'topic']
+        #                 return resolve_topic(df, topic)
+        #             except: # if there is not the referenced tweet we discard the tweet
+        #                 return -1
 
-            # Iterate over the indices of rows with non-integer topic IDs
-            for index in indices:
-                while not isinstance(df.loc[index, 'topic'], int):
-                    topic = df.loc[index, 'topic']
-                    if topic in indices:
-                        df.loc[index, 'topic'] = df.loc[topic, 'topic']
-                    else:
-                        df.loc[index, 'topic'] = None
+        # #self.df_retweets_labeled['topic'] = self.df_retweets_labeled['topic'].map(lambda row: resolve_topic(self.df_retweets_labeled, row))
+        # self.df_retweets_labeled['topic'] = np.vectorize(resolve_topic)(self.df_retweets_labeled, self.df_retweets_labeled['topic'])
+        df = self.df_retweets_labeled
+        topic_dict = df['topic'].to_dict()
+        for key, value in topic_dict.items():
+            while isinstance(value, str):
+                if value not in topic_dict:
+                    break
+                value = topic_dict[value]
+            topic_dict[key] = value
+        self.df_retweets_labeled['topic'] = df.index.map(topic_dict)
 
-            return df['topic']
+        # count how many tweets have a string topics 
+        print('counting string topics')
+        print(len(self.df_retweets_labeled[self.df_retweets_labeled['topic'].apply(lambda x: isinstance(x, str))]))
+        # discard them 
+        self.df_retweets_labeled = self.df_retweets_labeled[self.df_retweets_labeled['topic'].apply(lambda x: not isinstance(x, str))]
 
-        self.df_retweets_labeled['topic'] = resolve_topic(self.df_retweets_labeled, self.df_retweets_labeled['topic'])
+
         #self.df_quotes_labeled['topic'] = self.df_quotes_labeled['topic'].map(lambda row: resolve_topic(self.df_quotes_labeled, row))
         #self.df_reply_labeled['topic'] = self.df_reply_labeled['topic'].map(lambda row: resolve_topic(self.df_reply_labeled, row))
 

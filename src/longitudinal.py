@@ -57,7 +57,6 @@ cop2x = Tweets_to_network(tweets_cop2x, users_cop2x, 'cop2x')
 cop2x.process_json()
 
 
-#%%
 cop2x.get_topics(name = 'bert', df=cop2x.df_original_no_retweets)
 
 
