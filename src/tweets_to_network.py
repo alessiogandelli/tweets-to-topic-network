@@ -92,8 +92,10 @@ class Tweets_to_network:
             path to the json file containing the tweets
         file_user : str
             path to the json file containing the users
+        n_cop : int 
+            number of the cop
         """
-
+        # file e paths
         self.file_user = file_user
         self.file_tweets = file_tweets
         self.path = file_tweets.split('/')[:-1]
@@ -101,7 +103,11 @@ class Tweets_to_network:
         self.path_cache = os.path.join(self.path, 'cache')
         self.name = self.file_tweets.split('/')[-1].split('.')[0]
         self.graph_dir = os.path.join(self.path, 'networks')
-        self.model = None
+        self.n_cop = n_cop
+
+        self.model = None  # bertopic model to save in case you want to use it again 
+
+        # dataframes
         self.df_tweets = None
         self.df_original = None
         self.df_original_labeled = None
@@ -111,99 +117,125 @@ class Tweets_to_network:
         self.df_quotes_labeled = None
         self.df_reply = None
         self.df_reply_labeled = None
+        self.df_original_influencers = None
+        # graphs
         self.proj_graphs = {}
         self.ml_network = ml.empty()
+
         self.topic_labels = None
         self.text = None
-        self.n_cop = n_cop
-        self.df_original_influencers = None
-
-
-
+        
+        
 
     def process_json(self):
         """
         Process the json files and create the dataframes
 
         """
+        # prepare files where to save the dataframes in pkl format 
         file = os.path.join(self.path_cache,'tweets_'+self.name+'.pkl')
         file_original = os.path.join(self.path_cache,'tweets_original_'+self.name+'.pkl')
 
+        # if file original_tweets exists, load it
         if os.path.exists(file_original):
             self.df_original_influencers = pd.read_pickle(file_original)
             print('using cached file for original influencer processing')
 
-        # if pkl file tweets_cop22 exists, load it
+
+        # if file tweets_cop22 exists, load it, this save time in case you want to run the code multiple times
         if os.path.exists(file):
             print('using cached file for json processing')
             df_tweets = pd.read_pickle(file)
             
         else:
-            print('looking into users json file')
-            users = {}
-            with jsonlines.open(self.file_user) as reader: # open file
-                for obj in reader:
-                    users[obj['id']] = {'username': obj['username'], 'tweet_count': obj['public_metrics']['tweet_count'], 'followers' : obj['public_metrics']['followers_count'], 'following' : obj['public_metrics']['following_count']}
-
-            df_user = pd.DataFrame(users).T
-
-            print('looking into tweets json file')
-            tweets = {}
-            attachments = []
-            with jsonlines.open(self.file_tweets) as reader: # open file
-                for obj in reader:
-                    if obj.get('attachments') is  None : # avoid tweets with attachments
-                        tweets[obj.get('id', 0)] = {'author': obj['author_id'], 
-                                                        'author_name': users.get(obj['author_id'], {}).get('username'),
-                                                        'text': obj.get('text', ''), 
-                                                        'date': obj.get('created_at', ''),
-                                                        'lang':obj.get('lang', ''),
-                                                        'reply_count': obj.get('public_metrics', {}).get('reply_count', 0), 
-                                                        'retweet_count': obj.get('public_metrics', {}).get('retweet_count', 0), 
-                                                        'like_count': obj.get('public_metrics', {}).get('like_count', 0), 
-                                                        'quote_count': obj.get('public_metrics', {}).get('quote_count', 0),
-                                                        #'impression_count': obj['public_metrics']['impression_count'],
-                                                        'conversation_id': obj.get('conversation_id', None),
-                                                        'referenced_type': obj.get('referenced_tweets', [{}])[0].get('type', None),
-                                                        'referenced_id': obj.get('referenced_tweets', [{}])[0].get('id', None),
-                                                        'mentions_name': [ann.get('username', '') for ann in obj.get('entities',  {}).get('mentions', [])],
-                                                        'mentions_id': [ann.get('id', '') for ann in obj.get('entities',  {}).get('mentions', [])],
-                                                        'cop':  self.n_cop
-                                                    # 'context_annotations': [ann.get('entity').get('name') for ann in obj.get('context_annotations', [])]
-                                                    }
-                    else:
-                        attachments.append(obj)
-
-                print('discarded ',len(attachments) ,'tweets with attachments')
-
-            df_tweets = pd.DataFrame(tweets).T
+            print('processing json files')
+            df_tweets, df_user = self._load_json()
 
             # create cache folder if not exists and then
             if not os.path.exists(self.path_cache):
                 os.makedirs(self.path_cache)
+
             # save file in the cache folder both csv and pkl format
+            print('saving files at ', self.path_cache)
             df_user.to_csv(os.path.join(self.path_cache,'users_'+self.name+'.csv'))
             df_tweets.to_csv(os.path.join(self.path_cache,'tweets_'+self.name+'.csv'))
             df_tweets.to_pickle(file)
         
         df_tweets = df_tweets[df_tweets['lang'] == 'en'] # consider only english tweets
+        # !! if we do not have a name for the author we put the id
         df_tweets['author_name'] = df_tweets['author_name'].fillna(df_tweets['author'])
         
         # create the dataframes, devide the tweets in original, retweets, quotes and replies
-        self.df_tweets = df_tweets
-        self.df_original = df_tweets[df_tweets['referenced_type'].isna()]
-        self.df_original_no_retweets = self.df_original[self.df_original['retweet_count'] != 0]
+        start = datetime.datetime.now() 
+        print('start creating dataframes', start)
+        self.df_tweets = df_tweets # all the tweets 
+        self.df_original = df_tweets[df_tweets['referenced_type'].isna()]  # the handwritten tweets 
+        # self.df_original_no_retweets = self.df_original[self.df_original['retweet_count'] != 0] # the handwritten tweets with retweets
+
+        # only tweets with retweets, quotes or replies
         self.df_retweets = df_tweets[df_tweets['referenced_type'] == 'retweeted']
         self.df_quotes = df_tweets[df_tweets['referenced_type'] == 'quoted']
         self.df_reply = df_tweets[df_tweets['referenced_type'] == 'replied_to']
 
+        print('end', datetime.datetime.now() - start)
+
 
         return df_tweets
+    
 
-    def get_topics(self, name = 'openai', df = None):
+    def _load_json(self):
+        print('looking into users json file')
+        users = {}
+        with jsonlines.open(self.file_user) as reader: # open file
+            for obj in reader:
+                users[obj['id']] = {'username': obj['username'], 'tweet_count': obj['public_metrics']['tweet_count'], 'followers' : obj['public_metrics']['followers_count'], 'following' : obj['public_metrics']['following_count']}
+
+        df_user = pd.DataFrame(users).T
+
+        print('looking into tweets json file')
+        tweets = {}
+        attachments = 0
+        with jsonlines.open(self.file_tweets) as reader: # open file
+            for obj in reader:
+                if obj.get('attachments') is  None : # avoid tweets with attachments (should be analyzed with )
+                    tweets[obj.get('id', 0)] = {'author': obj['author_id'], 
+                                                    'author_name': users.get(obj['author_id'], {}).get('username'),
+                                                    'text': obj.get('text', ''), 
+                                                    'date': obj.get('created_at', ''),
+                                                    'lang':obj.get('lang', ''),
+                                                    'reply_count': obj.get('public_metrics', {}).get('reply_count', 0), 
+                                                    'retweet_count': obj.get('public_metrics', {}).get('retweet_count', 0), 
+                                                    'like_count': obj.get('public_metrics', {}).get('like_count', 0), 
+                                                    'quote_count': obj.get('public_metrics', {}).get('quote_count', 0),
+                                                    #'impression_count': obj['public_metrics']['impression_count'],
+                                                    'conversation_id': obj.get('conversation_id', None),
+                                                    'referenced_type': obj.get('referenced_tweets', [{}])[0].get('type', None),
+                                                    'referenced_id': obj.get('referenced_tweets', [{}])[0].get('id', None),
+                                                    'mentions_name': [ann.get('username', '') for ann in obj.get('entities',  {}).get('mentions', [])],
+                                                    'mentions_id': [ann.get('id', '') for ann in obj.get('entities',  {}).get('mentions', [])],
+                                                    'cop':  self.n_cop
+                                                # 'context_annotations': [ann.get('entity').get('name') for ann in obj.get('context_annotations', [])]
+                                                }
+                else:
+                    attachments+=1
+
+            print('discarded ',attachments ,'tweets with attachments')
+
+        df_tweets = pd.DataFrame(tweets).T
+
+        return df_tweets, df_user
+
+    def get_topics(self, name = 'bert', df = None, embedder_name = 'all-MiniLM-L6-v2'):
         """
         Get the topics of the original tweets
-           
+
+        Parameters
+        ----------
+        name : str
+            name of the model to use, default is bert
+        df : pandas.DataFrame
+            dataframe to use, default is the original tweets dataframe
+
         """
         time = datetime.datetime.now()
 
@@ -216,7 +248,7 @@ class Tweets_to_network:
         if(self.df_original is None):
             self.process_json()
 
-        # if pkl file tweets_cop22_topics exists, load it
+        # if pkl file tweets_cop22_topics exists, load it from the cache
         if os.path.exists(file):
             print('using cached topics')
             df_cop = pd.read_pickle(file)
@@ -227,25 +259,27 @@ class Tweets_to_network:
             df_cop = df
             # prepare documents for topic modeling
             docs = df_cop['text'].tolist()
-            docs = [re.sub(r"http\S+", "", doc) for doc in docs]
+            docs = [re.sub(r"http\S+", "", doc) for doc in docs] #  remove urls
             docs = [re.sub(r"@\S+", "", doc) for doc in docs] #  remove mentions 
             docs = [re.sub(r"#\S+", "", doc) for doc in docs] #  remove hashtags
             docs = [re.sub(r"\n", "", doc) for doc in docs] #  remove new lines
-            docs = [doc.strip() for doc in docs]#strip 
+            docs = [doc.strip() for doc in docs] #strip 
             
             if(name == 'openai'):
                 embs = openai.Embedding.create(input = docs, model="text-embedding-ada-002")['data']
                 self.embedder = None
                 embeddings = np.array([np.array(emb['embedding']) for emb in embs])
             else:
-                self.embedder = SentenceTransformer('all-MiniLM-L6-v2')
+                self.embedder = SentenceTransformer(embedder_name)
                 embeddings = self.embedder.encode(docs)
 
             # fit model
             
 
             # topic modeling
-            vectorizer_model = CountVectorizer(stop_words="english")
+            # avoid stop words, but vectorizer can do many other things check https://maartengr.github.io/BERTopic/getting_started/vectorizers/vectorizers.html
+            vectorizer_model = CountVectorizer(stop_words="english") 
+            # we can also change some parameter of the cTFIDF model https://maartengr.github.io/BERTopic/getting_started/ctfidf/ctfidf.html#reduce_frequent_words
             ctfidf_model = ClassTfidfTransformer(reduce_frequent_words=True)
             model = BERTopic( 
                                 vectorizer_model =   vectorizer_model,
@@ -272,10 +306,12 @@ class Tweets_to_network:
             if not os.path.exists(self.path_cache):
                 os.makedirs(self.path_cache)
 
+            print ('saving files ', datetime.datetime.now() - time)
             # save file in the cache folder 
             df_cop.to_pickle(file)
             #save model 
             model.save(os.path.join(self.path_cache,'model_'+self.name+'.pkl'))
+            print ( 'files saved ', datetime.datetime.now() - time)
 
         print('topics created in ', datetime.datetime.now() - time)
 
@@ -294,20 +330,7 @@ class Tweets_to_network:
         self.df_reply_labeled = pd.concat([self.df_original_labeled, self.df_reply])
 
         print('merged topics in ', datetime.datetime.now() - time)
-        # this is required for propagating the topic to the retweets
-        # def resolve_topic(df, row_id,):
-        #     if row_id is not  None:
-        #         if  isinstance(row_id, int): # the topic 
-        #             return int(row_id)
-        #         else: # the pointer 
-        #             try:
-        #                 topic = df.loc[row_id, 'topic']
-        #                 return resolve_topic(df, topic)
-        #             except: # if there is not the referenced tweet we discard the tweet
-        #                 return -1
 
-        # #self.df_retweets_labeled['topic'] = self.df_retweets_labeled['topic'].map(lambda row: resolve_topic(self.df_retweets_labeled, row))
-        # self.df_retweets_labeled['topic'] = np.vectorize(resolve_topic)(self.df_retweets_labeled, self.df_retweets_labeled['topic'])
         df = self.df_retweets_labeled
         topic_dict = df['topic'].to_dict()
         for key, value in topic_dict.items():
@@ -350,9 +373,21 @@ class Tweets_to_network:
         print('saved df_retweets_labeled', datetime.datetime.now() - time)
         return df_cop
 
-    def create_network(self, df_tweets, title, project = True):
+
+
+    def create_ttnetwork(self, df_tweets, title, project = True):
         """
-        Create a network from the dataframe of tweets and save it in a gml file
+        Create a temporal text network from the dataframe of tweets and save it in a gml file
+
+        Parameters
+        ----------
+        df_tweets : pandas.DataFrame
+            dataframe of tweets including, author, text, topic, author_name, referenced_type, referenced_id, mentions_name
+        title : str
+            title of the network
+        project : bool
+            if true project the network into multiple one mode network, one for each topic, saved in a dict 
+            using networkx
         """
         # if author name is none put author id 
         
@@ -361,32 +396,32 @@ class Tweets_to_network:
        
         A = df_tweets['author_name'].unique() # actors
         M = df_tweets.index                   # tweets 
-        x = df_tweets['text'].to_dict()
-        topics = df_tweets['topic'].to_dict()
-        author = df_tweets['author_name'].to_dict()
-        is_retweet = df_tweets['referenced_type'].to_dict()
+        x = df_tweets['text'].to_dict()       # dict mapping text and nodes 
+        topics = df_tweets['topic'].to_dict() # dict mapping topics and nodes
+        author = df_tweets['author_name'].to_dict() # dict mapping author and nodes
+        is_retweet = df_tweets['referenced_type'].to_dict() # dict mapping is_retweet and nodes
         # none to 'original
         is_retweet = {k: 'original' if v is None else v for k, v in is_retweet.items()}
-        g = nx.DiGraph()
+
+        g = nx.DiGraph() # we use a directed and bipartite graph
+
+        # add nodes
         g.add_nodes_from(A, bipartite=0) # author of tipe 0
         g.add_nodes_from(M, bipartite=1) # tweets of type 1
 
 
-        # list of tuples between author_nname and index 
+        # add edges 
         edges = list(zip(df_tweets['author_name'], df_tweets.index)) # author-> tweet
         ref_edges = list(zip( df_tweets.index, df_tweets['referenced_id'])) # retweet -> tweet
         ref_edges = [i for i in ref_edges if i[1] is not None] # remove all none values
-        men_edges = [(row.Index, mention) for row in df_tweets.itertuples() for mention in row.mentions_name]
+        men_edges = [(row.Index, mention) for row in df_tweets.itertuples() for mention in row.mentions_name] # tweet -> user
 
 
         g.add_edges_from(edges, weight = 10 )
         g.add_edges_from(ref_edges, weight = 1)
 
-   
 
-        # remove all nodes authomatically addd 
-
-        #add attribute bipartite to all nides without it, required for the new tweets added with the ref
+        # remove all nodes authomatically ad
         nodes_to_remove = [node for node in g.nodes if 'bipartite' not in g.nodes[node]]
         g.remove_nodes_from(nodes_to_remove)
                 # g.nodes[i]['bipartite'] = 1
@@ -397,7 +432,7 @@ class Tweets_to_network:
         t = {e: date_lookup[e[1]] for e in g.edges()}
         g.add_edges_from(men_edges)
 
-        # set bipartite = 0 ( so actors) to the new nodes(users) added 
+        # set bipartite = 0 (so actors) to the new nodes(users) added 
         nodes_to_set = [node for node in g.nodes if 'bipartite' not in g.nodes[node]]
         [g.nodes[node].setdefault('bipartite', 0) for node in nodes_to_set]
 
@@ -460,26 +495,6 @@ class Tweets_to_network:
 
         return G
     
-    def get_n_influencers(self, n = 1000):
-        '''
-        Get the top n most retweeted users  of the network and get their original tweets
-        '''
-
-        indegree = self.retweet_graph.in_degree()
-
-        indegree_df = pd.DataFrame(indegree, columns = ['author', 'indegree']).set_index('author').sort_values(by = 'indegree', ascending = False)
-        rt_count = self.df_retweets_labeled.groupby('author')[['author_name', 'retweet_count']].sum()
-
-        #merge the two df
-        indegree_df = indegree_df.merge(rt_count, left_index = True, right_index = True)
-
-        influencers = indegree_df.head(n).index
-
-        #get df_original of top 1000
-        infleuncers_df = self.df_original[self.df_original['author'].isin(influencers)]
-
-        return infleuncers_df
-
     def retweet_network_ml(self, df = None):
         if df is None:
             df = self.df_retweets_labeled
@@ -527,7 +542,6 @@ class Tweets_to_network:
         """
         Project a network from a gml file into multiple networks based on the topic of the tweets
         """
-
 
         def recursive_explore(graph, node,start_node, previous_node = None , edges = None, topic= None, depth = 0):
 
@@ -669,6 +683,26 @@ class Tweets_to_network:
             json.dump(labels, fp)
             
         return labels
+    
+    def get_n_influencers(self, n = 1000):
+        '''
+        Get the top n most retweeted users  of the network and get their original tweets
+        '''
+
+        indegree = self.retweet_graph.in_degree()
+
+        indegree_df = pd.DataFrame(indegree, columns = ['author', 'indegree']).set_index('author').sort_values(by = 'indegree', ascending = False)
+        rt_count = self.df_retweets_labeled.groupby('author')[['author_name', 'retweet_count']].sum()
+
+        #merge the two df
+        indegree_df = indegree_df.merge(rt_count, left_index = True, right_index = True)
+
+        influencers = indegree_df.head(n).index
+
+        #get df_original of top 1000
+        infleuncers_df = self.df_original[self.df_original['author'].isin(influencers)]
+
+        return infleuncers_df
 
 
 # %%

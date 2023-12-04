@@ -4,19 +4,21 @@ import sys
 import datetime
 import uunet.multinet as ml
 
-# file_tweets = '/Volumes/boot420/Users/data/climate_network/test/sample.json'
-# file_user = '/Volumes/boot420/Users/data/climate_network/test/users_cop22.json'
+file_tweets = '/Users/alessiogandelli/data/cop22/cop22.json'
+file_user = '/Users/alessiogandelli/data/cop22/users_cop22.json'
 
 # file_tweets = '/Volumes/boot420/Users/data/climate_network/cop22/cop22.json'
 # file_user = '/Volumes/boot420/Users/data/climate_network/cop22/cop22_user.json'
 
-file_tweets = '/Users/alessiogandelli/dev/tweets-to-topic-network/data/toy.json'
-file_user = '/Users/alessiogandelli/dev/tweets-to-topic-network/data/toy_users.json'
+# file_tweets = '/Users/alessiogandelli/dev/uni/tweets-to-topic-network/data/toy.json'
+# file_user = '/Users/alessiogandelli/dev/uni/tweets-to-topic-network/data/toy_users.json'
 
 start = datetime.datetime.now()
 
-p = Tweets_to_network(file_tweets, file_user)
+p = Tweets_to_network(file_tweets, file_user, 'cop99')
 p.process_json()
+
+#%%
 print('json processed in ', datetime.datetime.now()-start)
 p.get_topics(name = 'bert')
 print('topics extracted in ', datetime.datetime.now()-start)
