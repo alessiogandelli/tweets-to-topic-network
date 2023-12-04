@@ -251,7 +251,7 @@ class Tweets_to_network:
                                 vectorizer_model =   vectorizer_model,
                                 ctfidf_model      =   ctfidf_model,
                                 nr_topics        =  'auto',
-                                min_topic_size   =   max(int(len(docs)/1000),10),
+                                min_topic_size   =   max(int(len(docs)/800),10),
                                 embedding_model  = self.embedder,
                             )
 
@@ -480,13 +480,14 @@ class Tweets_to_network:
 
         return infleuncers_df
 
-
-
     def retweet_network_ml(self, df = None):
         if df is None:
             df = self.df_retweets_labeled
         
         topics = df['topic'].unique()
+
+        # remove -1
+        topics = topics[topics != -1]
 
         ml_network = ml.empty()
 
@@ -494,16 +495,19 @@ class Tweets_to_network:
             G = nx.DiGraph()
             df_tmp = df[df['topic'] == topic]
             G.add_nodes_from(df_tmp['author'].unique())
+            print('topic', topic, 'nodes', len(df_tmp['author'].unique()))
 
             for i, row in df_tmp.iterrows():
-                ref_id = row['referenced_id']
-
-                if ref_id is not None:
-                # if the edge already exists add 1 to the weight
-                    if G.has_edge(row['author'], df_tmp.loc[str(ref_id)]['author']):
-                        G[row['author']][df_tmp.loc[str(ref_id)]['author']]['weight'] += 1
-                    else:
-                        G.add_edge(row['author'], df_tmp.loc[str(ref_id)]['author'], weight=1)
+                    ref_id = row['referenced_id']
+                    try:
+                        if ref_id is not None:
+                        # if the edge already exists add 1 to the weight
+                            if G.has_edge(row['author'], df_tmp.loc[str(ref_id)]['author']):
+                                G[row['author']][df_tmp.loc[str(ref_id)]['author']]['weight'] += 1
+                            else:
+                                G.add_edge(row['author'], df_tmp.loc[str(ref_id)]['author'], weight=1)
+                    except:
+                        print(ref_id)
                         
             ml.add_nx_layer(ml_network, G , str(topic))
 
