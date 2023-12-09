@@ -147,6 +147,14 @@ The projection of the first one is not a retweet network, in fact it contains al
 we use openai gpt3.5turbo model to label the topic using the putput of the cTFIDF and some representative tweets. 
 
 
+#  How to run it
+
+suggestion: create a folder for each set of tweets you want to process, in our case one for each COP. Inside this folder there should be the two jsonl files, one for the tweets and one for the users. After running the main script( either using make or just running main.py) in that folder you will find the following folders:
+
+- `cache`: contains the csv and pickle files of the intermediate steps of the pipeline, from the cleaned dataset in csv to the label of the topics.
+
+- `networks`: contains the gml files of the temporal text network
+
 ```python
 
 # A Real Example

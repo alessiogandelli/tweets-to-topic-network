@@ -4,8 +4,8 @@ import sys
 import datetime
 
 # get file from command line
-file_tweets = sys.argv[1]
-file_user = sys.argv[2]
+# file_tweets = sys.argv[1]
+# file_user = sys.argv[2]
 
 file_tweets = '/Users/alessiogandelli/data/cop22/cop22.json'
 file_user = '/Users/alessiogandelli/data/cop22/users_cop22.json'
@@ -15,7 +15,7 @@ file_user = '/Users/alessiogandelli/data/cop22/users_cop22.json'
 start = datetime.datetime.now()
 print('start at ', start)
 
-p = Tweets_to_network(file_tweets, file_user)
+p = Tweets_to_network(file_tweets, file_user, 'cop22')
 p.process_json()
 print('json processed in ', datetime.datetime.now()-start)
 p.get_topics(name = 'bert')
