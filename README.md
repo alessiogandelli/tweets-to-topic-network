@@ -1,4 +1,8 @@
 # tweets-to-network
+TOFIX:
+- [ ] make it work with make
+
+
 This repository contains the code to create a temporal text network from a set of tweets in json format (as they come from the api), labeling each tweet according to its topic. The network is saved in gml format.
 
 Optionally from the temporal text network we can create a projected multilayer network where each layer is a topic and the nodes are the users.
