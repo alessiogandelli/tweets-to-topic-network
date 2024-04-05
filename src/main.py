@@ -21,7 +21,7 @@ print('json processed in ', datetime.datetime.now()-start)
 p.get_topics(name = 'bert')
 print('topics extracted in ', datetime.datetime.now()-start)
 
-
+#%%
 p.label_topics()
 
 #%%

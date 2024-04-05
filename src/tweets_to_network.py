@@ -20,11 +20,21 @@ from sentence_transformers import SentenceTransformer
 import json
 import openai
 import datetime
+from qdrant_client import QdrantClient, models
+import json
+
+
 load_dotenv()
 
 os.environ['TOKENIZERS_PARALLELISM'] = 'false' # to avoid a warning 
 openai.api_key = os.getenv("OPENAI_API_KEY")    
+client = QdrantClient("localhost:6333") # vector database saved in memory
 
+collection_name = 'cop'
+# client.create_collection(
+#     collection_name=collection_name,
+#     vectors_config=models.VectorParams(size=384, distance=models.Distance.COSINE),
+# )
 
 #%%
 class Tweets_to_network:
@@ -124,6 +134,7 @@ class Tweets_to_network:
 
         self.topic_labels = None
         self.text = None
+        self.embeddings = None
         
         
 
@@ -273,6 +284,20 @@ class Tweets_to_network:
                 self.embedder = SentenceTransformer(embedder_name)
                 embeddings = self.embedder.encode(docs)
 
+            self.embeddings = embeddings
+
+
+
+
+
+
+
+            
+
+            # save embeddings in qdrant
+
+            
+
             # fit model
             
 
@@ -293,7 +318,8 @@ class Tweets_to_network:
             try:
                 topics ,probs = model.fit_transform(docs, embeddings = embeddings)
                 df_cop['topic'] = topics    
-                df_cop['topic_prob'] = probs        
+                df_cop['topic_prob'] = probs   
+                #df_cop['embedding'] = embeddings   
                 model.get_topic_info().to_csv(os.path.join(self.path_cache,'topics_cop22.csv'))
                 self.model = model          
 
@@ -307,11 +333,53 @@ class Tweets_to_network:
                 os.makedirs(self.path_cache)
 
             print ('saving files ', datetime.datetime.now() - time)
+
+
+
+
+            ids = df_cop.index.tolist()
+            vectors = embeddings.tolist()
+            texts = docs
+            topics = df_cop['topic'].tolist()
+            probs = df_cop['topic_prob'].tolist()
+
+ 
+            try:
+                client.create_collection(
+                    collection_name= self.name,
+                    vectors_config=models.VectorParams(size=len(embeddings[0]), distance=models.Distance.COSINE),
+                )
+            except:
+                print('collection already exists')
+
+            try:
+                points = [
+                    models.PointStruct(
+                        id = int(idx),
+                        vector = vector,
+                        payload = {"text": text, "topic": topic, "prob": prob}
+                
+                    )
+                    for idx, vector, text, topic, prob in zip(ids, vectors, texts, topics, probs)
+                ]
+                client.upload_points(self.name, points)
+                print ('vectors saved in qdrant ', datetime.datetime.now() - time)
+
+            except(Exception) as e:
+                print(e)
+                print('error in saving vectors in qdrant')
+
+            
+
+                        
+
+
             # save file in the cache folder 
             df_cop.to_pickle(file)
             #save model 
             model.save(os.path.join(self.path_cache,'model_'+self.name+'.pkl'))
             print ( 'files saved ', datetime.datetime.now() - time)
+
 
         print('topics created in ', datetime.datetime.now() - time)
 
@@ -372,7 +440,6 @@ class Tweets_to_network:
 
         print('saved df_retweets_labeled', datetime.datetime.now() - time)
         return df_cop
-
 
 
     def create_ttnetwork(self, df_tweets, title, project = True):
