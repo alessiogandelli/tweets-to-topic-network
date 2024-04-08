@@ -51,20 +51,19 @@ class Data_processor:
         
         #miss preprocessing here
         self._create_dataframes()
+        self._log_info()
 
 
     def _create_dataframes(self):
         """
         Create dataframes by dividing tweets into original, retweets, quotes, and replies.
         """
-        start = datetime.datetime.now() 
-        print('start creating dataframes', start)
+        print('creating dataframes')
         df_tweets = self.df_tweets
         self.df_original = df_tweets[df_tweets['referenced_type'].isna()] # The handwritten tweets
         self.df_retweets = df_tweets[df_tweets['referenced_type'] == 'retweeted']
         self.df_quotes = df_tweets[df_tweets['referenced_type'] == 'quoted']
         self.df_reply = df_tweets[df_tweets['referenced_type'] == 'replied_to']
-        print('end', datetime.datetime.now() - start)
     
     def _is_cached(self):
        
@@ -124,3 +123,12 @@ class Data_processor:
 
         df_tweets = pd.DataFrame(tweets).T
         return df_tweets
+    
+    def _log_info(self):
+        print('Data processed')
+        print('Tweets:', self.df_tweets.shape[0])
+        print('Original tweets:', self.df_original.shape[0])
+        print('Retweets:', self.df_retweets.shape[0])
+        print('Quotes:', self.df_quotes.shape[0])
+        print('Replies:', self.df_reply.shape[0])
+        print('Users:', self.df_users.shape[0])
