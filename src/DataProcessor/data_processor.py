@@ -35,6 +35,7 @@ class Data_processor:
         
         # df_tweets and df_users are the cleaned dataframe is a tabular form btu before other data preprocessing
         if self._is_cached():
+            print('loading files from the cache ', self.path_cache)
             self.df_tweets = pd.read_pickle(self.tweets_file+'.pkl')
             self.df_users = pd.read_pickle( self.users_file+'.pkl')
         else:
@@ -45,18 +46,20 @@ class Data_processor:
             df_tweets.to_csv(self.tweets_file+'.csv')
             df_user.to_pickle(self.users_file+'.pkl')
             df_tweets.to_pickle(self.tweets_file+'.pkl')
+            self.df_tweets = df_tweets
+            self.df_users = df_user
         
         #miss preprocessing here
-        self._create_dataframes(df_tweets)
+        self._create_dataframes()
 
 
-    def _create_dataframes(self, df_tweets):
+    def _create_dataframes(self):
         """
         Create dataframes by dividing tweets into original, retweets, quotes, and replies.
         """
         start = datetime.datetime.now() 
         print('start creating dataframes', start)
-        self.df_tweets = df_tweets # All the tweets
+        df_tweets = self.df_tweets
         self.df_original = df_tweets[df_tweets['referenced_type'].isna()] # The handwritten tweets
         self.df_retweets = df_tweets[df_tweets['referenced_type'] == 'retweeted']
         self.df_quotes = df_tweets[df_tweets['referenced_type'] == 'quoted']
