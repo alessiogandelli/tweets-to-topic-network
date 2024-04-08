@@ -362,7 +362,7 @@ class Tweets_to_network:
                     )
                     for idx, vector, text, topic, prob in zip(ids, vectors, texts, topics, probs)
                 ]
-                client.upload_points(self.name, points)
+                client.upload_points(self.name, points, parallel = 4)
                 print ('vectors saved in qdrant ', datetime.datetime.now() - time)
 
             except(Exception) as e:

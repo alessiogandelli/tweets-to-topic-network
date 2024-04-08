@@ -42,4 +42,3 @@ print('retweets network created in ', datetime.datetime.now()-start)
 #p.project_network(path='/Volumes/boot420/Users/data/climate_network/test/networks/sampleretweets.gml', title='retweets')
 
 
-# %%
