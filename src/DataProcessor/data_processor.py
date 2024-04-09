@@ -20,6 +20,7 @@ class Data_processor:
         self.path_cache = os.path.join(self.folder, 'cache')
         self.tweets_file = os.path.join(self.path_cache,'tweets_'+self.name)
         self.users_file = os.path.join(self.path_cache,'users_'+self.name)
+        self.labeled_file = os.path.join(self.path_cache,'retweet_labeled_'+self.name)
 
         # dataframes
         self.df_tweets = None
@@ -28,7 +29,7 @@ class Data_processor:
         self.df_retweets = None
         self.df_quotes = None
         self.df_reply = None
-
+        self.df_retweets_labeled = None
 
     def process_json(self):
     
@@ -52,7 +53,6 @@ class Data_processor:
         #miss preprocessing here
         self._create_dataframes()
         self._log_info()
-
 
     def _create_dataframes(self):
         """
@@ -132,3 +132,38 @@ class Data_processor:
         print('Quotes:', self.df_quotes.shape[0])
         print('Replies:', self.df_reply.shape[0])
         print('Users:', self.df_users.shape[0])
+
+    def update_df(self, df_labeled):
+        """
+        Update the retweet dataframe with the labeled data.
+        """
+        self.df_retweets['topic'] = self.df_retweets['referenced_id']
+        self.df_retweets_labeled = pd.concat([df_labeled, self.df_retweets])
+
+        # too many tweets are not resolved
+        topic_dict = self.df_retweets_labeled['topic'].to_dict() # map id and topic
+        for key, value in topic_dict.items(): # iterate over all the tweets 
+            while isinstance(value, str): # if the value is a string it is a tweets id so we take the topic of that tweet 
+                if value not in topic_dict:
+                    break
+                value = topic_dict[value]
+            topic_dict[key] = value
+
+        self.df_retweets_labeled['topic'] = self.df_retweets_labeled.index.map(topic_dict)
+
+        print('i cannot resolve ',len(self.df_retweets_labeled[self.df_retweets_labeled['topic'].apply(lambda x: isinstance(x, str))]))
+        
+        # remove all the tweets that are not resolved
+        self.df_retweets_labeled = self.df_retweets_labeled[self.df_retweets_labeled['topic'].apply(lambda x: not isinstance(x, str))]
+        self.df_retweets_labeled = self.df_retweets_labeled[self.df_retweets_labeled['topic'].notna()]
+
+        self._save_labeled_dataframe()
+
+        return self.df_retweets_labeled
+    
+    def _save_labeled_dataframe(self):
+        self.df_retweets_labeled.to_csv(self.labeled_file+'.csv')
+        self.df_retweets_labeled.to_pickle(self.labeled_file+'.pkl')
+
+    def __repr__(self) -> str:
+        return f'Data_processor(file_tweets={self.file_tweets}, file_user={self.file_user}, n_cop={self.n_cop})'
