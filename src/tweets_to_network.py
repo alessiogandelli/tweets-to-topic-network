@@ -441,7 +441,6 @@ class Tweets_to_network:
         print('saved df_retweets_labeled', datetime.datetime.now() - time)
         return df_cop
 
-
     def create_ttnetwork(self, df_tweets, title, project = True):
         """
         Create a temporal text network from the dataframe of tweets and save it in a gml file

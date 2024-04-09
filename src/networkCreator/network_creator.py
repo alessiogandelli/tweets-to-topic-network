@@ -1,6 +1,8 @@
 import os
 import networkx as nx
-
+import uunet.multinet as ml
+from igraph import Graph 
+import igraph as ig
 
 class Network_creator:
 
@@ -12,6 +14,8 @@ class Network_creator:
         self.graph_dir = os.path.join(self.path, 'networks')
         self.text = None
         self.retweet_graph = None
+        self.proj_graphs = {}
+        self.ml_network = ml.empty()
         
 
     def create_retweet_network(self):
@@ -45,6 +49,7 @@ class Network_creator:
         filename = os.path.join(self.graph_dir,self.name+'_'+title+'.gml')
         nx.write_gml(G, filename)
         print('network created at', filename)
+        return filename
 
     def plot_network(self, G):
         print('plot network')
@@ -121,18 +126,116 @@ class Network_creator:
         nx.set_node_attributes(g, author, 'author')
         nx.set_node_attributes(g, is_retweet, 'is_retweet')
 
-        #self.graph_dir = os.path.join(self.path, 'networks')
 
-        if not os.path.exists(self.graph_dir):
-            os.makedirs(self.graph_dir)
+        filename = self._save_graph(g, 'ttt')
 
-        filename = os.path.join(self.graph_dir,self.name+'_'+self.name+'.gml')
-        nx.write_gml(g, filename)
-        print('network created at', filename)
-
-        # if project:
-        #     self.project_network(path = filename , title = self.name)
+        if project:
+            self._project_network(path = filename , title = self.name)
 
         self.text = x
 
         return (g, x, t)
+    
+
+    def _project_network(self, path = None, nx_graph = None, title = None):
+        """
+        Project a network from a gml file into multiple networks based on the topic of the tweets
+        """
+
+        def recursive_explore(graph, node,start_node, previous_node = None , edges = None, topic= None, depth = 0):
+
+            neighbors = graph.neighborhood(node, mode='out') 
+            
+            # if it is the first we initialize the edges
+            if edges is None:
+                edges = {}
+            
+            # it is a user
+            if node['bipartite'] == 0.0 :
+                # if there is only one node in the middle it is a mention
+                if depth == 2 :
+                    edges.setdefault(topic, []).append((start_node['label'], node['label']))
+                    return
+                # in this  case we have a retweet  
+                elif depth > 2 :
+                    edges.setdefault(topic, []).append((start_node['label'], previous_node['author']))
+                    return
+            # it is a tweet
+            else:
+                if topic is None:
+                    topic = node['topics']
+                # end of the chain it is a retweet without mention
+                if (len(neighbors) == 1):
+                    edges.setdefault(topic, []).append((start_node['label'], node['author']))
+                    return
+
+            # explore all the neighbors
+            for neighbor in neighbors[1:]:
+                new_node = g.vs[neighbor]
+                recursive_explore(graph, node = new_node, previous_node = node, start_node = start_node, depth = depth+1, edges= edges, topic= topic)
+
+            return edges
+
+        if path is not None:
+            g =  Graph.Read_GML(path)
+            
+        elif nx_graph is not None:
+            g = Graph.from_networkx(nx_graph)
+            g.vs['label'] = g.vs['_nx_name']
+            
+        else:
+            print('provide a graph of a gml file o a networkx graph')
+            return None
+
+        edges = {}
+
+        # for each user
+        for n in g.vs.select(bipartite=0):
+            # get all neighbors of g
+            visited = set()
+            result = recursive_explore(g, n, start_node = n)
+            #print(result)
+            edges = {key: edges.get(key, []) + result.get(key, []) for key in set(edges) | set(result)}
+
+        edges = {e: set(edges[e]) for e in edges }
+        edges.pop(None, None)
+        # drop key 
+        print('projected network created')
+
+        self._save_projected(edges)
+
+        # prj_dir = os.path.join(self.graph_dir, 'projected')
+
+        # if not os.path.exists(prj_dir):
+        #     os.makedirs(prj_dir)
+       
+        # for t, e in edges.items():
+        #     print(t, len(e))
+        #     if t != 'NaN':
+        #         self.proj_graphs[t] = nx.from_edgelist(e, create_using=nx.DiGraph())
+        #         nx.write_gml(self.proj_graphs[t], os.path.join(prj_dir, self.name+'_'+title+'_prj_'+str(t)+'.gml'))
+        #         ml.add_nx_layer(ml_network, self.proj_graphs[t], str(t))
+        
+        # ml.write(ml_network, file = os.path.join(self.graph_dir, self.name+'retweet_ml.gml'))
+        # save file 
+       # Graph.write_gml(g, os.path.join(self.graph_dir, self.name+title+'_prj.gml'))
+
+        
+        return self.proj_graphs
+
+    def _save_projected(self, edges):
+        prj_dir = os.path.join(self.graph_dir, 'projected')
+
+        if not os.path.exists(prj_dir):
+            os.makedirs(prj_dir)
+
+
+       
+        for t, e in edges.items():
+            print(t, len(e))
+            if t != 'NaN':
+                self.proj_graphs[t] = nx.from_edgelist(e, create_using=nx.DiGraph())
+                nx.write_gml(self.proj_graphs[t], os.path.join(prj_dir, self.name+'__prj_'+str(t)+'.gml'))
+                ml.add_nx_layer(self.ml_network, self.proj_graphs[t], str(t))
+
+        ml.write(self.ml_network, file = os.path.join(self.graph_dir, self.name+'retweet_ml.gml'))

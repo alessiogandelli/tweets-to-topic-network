@@ -1,6 +1,6 @@
 # %%
 from dataProcessor.data_processor import Data_processor 
-from topicModeler.topic_modeler import Topic_modeling
+from topicModeler.topic_modeler import Topic_modeler
 from networkCreator.network_creator import Network_creator
 
 n_cop = 'cop22'
@@ -15,7 +15,7 @@ file_user = '/Users/alessiogandelli/data/' + n_cop + '/users_'+ n_cop+'.json'
 data = Data_processor(file_tweets, file_user, '22')
 data.process_json()
 
-tm = Topic_modeling(data.df_original, name = data.name, embedder_name='all-MiniLM-L6-v2', path_cache = data.path_cache)
+tm = Topic_modeler(data.df_original, name = data.name, embedder_name='all-MiniLM-L6-v2', path_cache = data.path_cache)
 df_labeled = tm.get_topics()
 
 
@@ -55,7 +55,7 @@ df = pd.DataFrame({
     'lang': ['en', 'en', 'en', 'en', 'en', 'en', 'en', 'en', 'en'],
     'referenced_type': ['original', 'original', 'retweet', 'original', 'retweet', 'retweet', 'retweet', 'retweet', 'retweet'],
     'referenced_id': [ None, None, 'tweet2', None, 'tweet3', 'tweet2', 'tweet2', 'tweet2', 'tweet8'],
-    'topic' : [1,1,1,1,1,1,1,1,1],
+    'topic' : [1,1,1,1,2,2,2,1,1],
     'mentions_name': [[], [], [], [], [], [], [], [], []]
     
 }).set_index('id')
