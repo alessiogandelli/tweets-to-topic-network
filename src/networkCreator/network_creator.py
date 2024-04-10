@@ -12,13 +12,18 @@ class Network_creator:
         self.name = name
         self.path = path
         self.graph_dir = os.path.join(self.path, 'networks')
-        self.text = None
-        self.retweet_graph = None
+
+        self.ttn = None
+        self.retweet_network = None
+        self.retweet_network_ml = None
         self.proj_graphs = {}
         self.ml_network = ml.empty()
         
 
     def create_retweet_network(self):
+        """
+        create a retweet network from the dataframe of tweets and save it in a gml file
+        """
         print('create retweet network')
         G = nx.DiGraph() # directed graph
         
@@ -35,41 +40,18 @@ class Network_creator:
                 else:
                     G.add_edge(row['author'], self.df.loc[str(ref_id)]['author'], weight=1)
             
-        self.retweet_graph = G
+        self.retweet_network = G
 
         self._save_graph(G, 'retweet')
 
         return G
     
-    def _save_graph(self, G, title):
-        print('save graph', title)
-        if not os.path.exists(self.graph_dir):
-            os.makedirs(self.graph_dir)
-
-        filename = os.path.join(self.graph_dir,self.name+'_'+title+'.gml')
-        nx.write_gml(G, filename)
-        print('network created at', filename)
-        return filename
-
-    def plot_network(self, G):
-        print('plot network')
-        import matplotlib.pyplot as plt
-        pos = nx.kamada_kawai_layout(G)
-        nx.draw_networkx_nodes(G, pos)
-        nx.draw_networkx_edges(G, pos)
-        nx.draw_networkx_labels(G, pos)
-        plt.show()
-
     def create_ttnetwork(self, project = True):
         """
         Create a temporal text network from the dataframe of tweets and save it in a gml file
 
         Parameters
         ----------
-        df_tweets : pandas.DataFrame
-            dataframe of tweets including, author, text, topic, author_name, referenced_type, referenced_id, mentions_name
-        title : str
-            title of the network
         project : bool
             if true project the network into multiple one mode network, one for each topic, saved in a dict 
             using networkx
@@ -133,8 +115,56 @@ class Network_creator:
             self._project_network(path = filename , title = self.name)
 
         self.text = x
+        self.ttn = (g, x, t)
 
         return (g, x, t)
+    
+    def create_retweet_ml(self):
+        """
+        Create a multilayer network from the projected networks, one layer is the retweet network of a specific topic
+        """
+        topics = self.df['topic'].unique()
+
+        # remove -1
+        topics = topics[topics != -1]
+
+        ml_network = ml.empty()
+
+        for topic in topics:
+            G = nx.DiGraph()
+            df_tmp = self.df[self.df['topic'] == topic]
+            G.add_nodes_from(df_tmp['author'].unique())
+            print('topic', topic, 'nodes', len(df_tmp['author'].unique()))
+
+            for i, row in df_tmp.iterrows():
+                    ref_id = row['referenced_id']
+                    try:
+                        if ref_id is not None:
+                        # if the edge already exists add 1 to the weight
+                            if G.has_edge(row['author'], df_tmp.loc[str(ref_id)]['author']):
+                                G[row['author']][df_tmp.loc[str(ref_id)]['author']]['weight'] += 1
+                            else:
+                                G.add_edge(row['author'], df_tmp.loc[str(ref_id)]['author'], weight=1)
+                    except:
+                        print(ref_id)
+                        
+            ml.add_nx_layer(ml_network, G , str(topic))
+
+        self.retweet_network_ml = ml_network
+
+        
+        
+        # save GML file
+        if not os.path.exists(self.graph_dir):
+            os.makedirs(self.graph_dir)
+
+        filename = os.path.join(self.graph_dir,self.name+'_retweet_network_ml.gml')
+        ml.write(ml_network, file = filename)
+
+        self.retweetml2 = ml_network
+
+
+        return ml_network
     
     def _project_network(self, path = None, nx_graph = None, title = None):
         """
@@ -237,4 +267,34 @@ class Network_creator:
                 nx.write_gml(self.proj_graphs[t], os.path.join(prj_dir, self.name+'__prj_'+str(t)+'.gml'))
                 ml.add_nx_layer(self.ml_network, self.proj_graphs[t], str(t))
 
-        ml.write(self.ml_network, file = os.path.join(self.graph_dir, self.name+'retweet_ml.gml'))
+        ml.write(self.ml_network, file = os.path.join(self.graph_dir, self.name+'_retweet_ml.gml'))
+
+    def _save_graph(self, G, title):
+        """
+        Save a network in a gml file and creates the networks directory if needed 
+
+        Parameters
+        ----------
+        G : networkx.Graph
+            network to save
+        title : str
+            title of the network
+        """
+        print('save graph', title)
+        if not os.path.exists(self.graph_dir):
+            os.makedirs(self.graph_dir)
+
+        filename = os.path.join(self.graph_dir,self.name+'_'+title+'.gml')
+        nx.write_gml(G, filename)
+        print('network created at', filename)
+        # create a png of the network
+        return filename
+    
+    def plot_network(self, G):
+        print('plot network')
+        import matplotlib.pyplot as plt
+        pos = nx.kamada_kawai_layout(G)
+        nx.draw_networkx_nodes(G, pos)
+        nx.draw_networkx_edges(G, pos)
+        nx.draw_networkx_labels(G, pos)
+        plt.show()
