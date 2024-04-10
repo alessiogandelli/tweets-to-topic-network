@@ -136,7 +136,6 @@ class Network_creator:
 
         return (g, x, t)
     
-
     def _project_network(self, path = None, nx_graph = None, title = None):
         """
         Project a network from a gml file into multiple networks based on the topic of the tweets
