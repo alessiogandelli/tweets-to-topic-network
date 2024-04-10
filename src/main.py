@@ -1,36 +1,31 @@
-#%%
-from tweets_to_network import Tweets_to_network
-import sys 
-import datetime
+# %%
+from dataProcessor.data_processor import Data_processor 
+from topicModeler.topic_modeler import Topic_modeler
+from networkCreator.network_creator import Network_creator
 
-# get file from command line
-# file_tweets = sys.argv[1]
-# file_user = sys.argv[2]
+n_cop = 'cop22'
 
-file_tweets = '/Users/alessiogandelli/data/cop22/cop22.json'
-file_user = '/Users/alessiogandelli/data/cop22/users_cop22.json'
+file_tweets = '/Users/alessiogandelli/data/' + n_cop + '/' + n_cop + '.json'
+file_user = '/Users/alessiogandelli/data/' + n_cop + '/users_'+ n_cop+'.json'
 
-#%%
-
-start = datetime.datetime.now()
-print('start at ', start)
-
-p = Tweets_to_network(file_tweets, file_user, 'cop22')
-p.process_json()
-print('json processed in ', datetime.datetime.now()-start)
-p.get_topics(name = 'bert')
-print('topics extracted in ', datetime.datetime.now()-start)
+# file_tweets = '/Users/alessiogandelli/dev/uni/tweets-to-topic-network/data/toy.json'
+# file_user = '/Users/alessiogandelli/dev/uni/tweets-to-topic-network/data/toy_users.json'
 
 #%%
-p.label_topics()
+data = Data_processor(file_tweets, file_user, '22')
+data.process_json()
 
-#%%
-p.create_network(p.df_reply_labeled, 'reply')
-print('reply network created in ', datetime.datetime.now()-start)
-p.create_network(p.df_quotes_labeled, 'quotes')
-print('quotes network created in ', datetime.datetime.now()-start)
-p.create_network(p.df_retweets_labeled, 'retweets')
-print('retweets network created in ', datetime.datetime.now()-start)
+tm = Topic_modeler(data.df_original, name = data.name, embedder_name='all-MiniLM-L6-v2', path_cache = data.path_cache)
+df_labeled = tm.get_topics()
+
+
+df_retweet_labeled = data.update_df(df_labeled)
+
+nw = Network_creator(df_retweet_labeled, name = data.name, path = data.folder)
+G = nw.create_retweet_network()
+nw.create_ttnetwork()
+nw.create_retweet_ml()
+
 
 
 

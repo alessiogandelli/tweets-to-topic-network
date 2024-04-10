@@ -1,40 +1,39 @@
 # tweets-to-network
-TOFIX:
-- [ ] make it work with make
 
 
-This repository contains the code to create a temporal text network from a set of tweets in json format (as they come from the api), labeling each tweet according to its topic. The network is saved in gml format.
+This repository contains the code to 
+- create networks from a set of tweets in json format (as they come from the API (RIP))
+- label each tweet with a topic using BERTopic
 
-Optionally from the temporal text network we can create a projected multilayer network where each layer is a topic and the nodes are the users.
+from a set of tweets it is possibile to generate multiple networks:
+- *retweet network*:  a network where the nodes are the users and the edges are the retweets
+- *retweet network multilayer*: a network where the nodes are the users and the edges are the retweets, but the edges are divided in layers based on the topic of the tweet
+- *temporal text network*: a bipartite network where the nodes are the tweets and the users and the edges are the interactions between them
 
 #  Quickstart
-## with python
+
 ```python
-from utils import Pipeline
-p = Pipeline(file_tweets, file_user)
-p.process_json()
-p.get_topics()
+data = Data_processor(file_tweets, file_user, '22')
+data.process_json() # this process the data and creates several dataframes useful for the next steps
 
-p.create_network(p.df_retweets_labeled, 'retweets')
-p.create_network(p.df_quotes_labeled, 'quotes')
-p.create_network(p.df_reply_labeled, 'reply')
+tm = Topic_modeler(data.df_original, name = data.name, embedder_name='all-MiniLM-L6-v2', path_cache = data.path_cache)
+df_labeled = tm.get_topics() # this creates a new column in the dataframe with the topic of the tweet
 
-```
 
-##  with terminal
+df_retweet_labeled = data.update_df(df_labeled) # this updates the dataframe with the labeled topics
 
-open a terminal and run, tweet file is the user file is the file with the users information
-
+nw = Network_creator(df_retweet_labeled, name = data.name, path = data.folder)
+nw.create_retweet_network() # this creates the retweet network
+nw.create_ttnetwork()   # this creates the temporal text network
+nw.create_retweet_ml()  # this creates the multilayer network
 
 ```
-make run tweet_file=url user_file=url
-```
 
 
-# input 
-Th input is in [jsonl](https://jsonlines.org/) format, so one json per line representing or a user or a tweet depending on the file. You can find an example in [this](https://github.com/alessiogandelli/tweets-to-topic-network/tree/main/data) folder. This format is the one you can get querying the twitter api.
-## json tweets file 
-The json tweets file contains information about all tweets involved in the conversation. Each tweet is represented as a json object with the following fields:
+# Input 
+Th input is in [jsonl](https://jsonlines.org/) format, so one JSON per line representing or a user or a tweet depending on the file. You can find an example in [this](https://github.com/alessiogandelli/tweets-to-topic-network/blob/main/data/toy.json) file. This format is the one you can get querying the Twitter API.
+## JSON tweets file 
+The JSON tweets file contains information about all tweets involved in the conversation. Each tweet is represented as a JSON object with the following fields:
 
 - `author`: The ID of the tweet author.
 - `author_name`: The username of the tweet author.
@@ -53,8 +52,8 @@ The json tweets file contains information about all tweets involved in the conve
 - `mentions_id`: A list of IDs of users mentioned in the tweet.
 
 
-## json users file
-The json users file contains information about all users involved in the conversation. Each user is represented as a json object with the following fields:
+## JSON users file
+The user's file contains information about all users involved in the conversation. Each user is represented as a JSON object with the following fields:
 
 - `id`: The ID of the user.
 - `username`: The username of the user.
@@ -63,39 +62,62 @@ The json users file contains information about all users involved in the convers
 - `following`: The number of accounts the user is following.
 
 
-# Workflow
+# Classes
+The pipeline is divided into three classes, each of them is independent and can be used separately.
 
-## init
+- dataProcessor: takes the two json files and creates a pandas dataframe with all the tweets in english. It also creates a cache of the dataframe in csv and pickle format.
+
+- TopicModeler: takes a dataframe and labels the tweets with a topic using BERTopic. It also creates a cache of the labeled dataframe in csv and pickle format.
+
+- NetworkCreator: takes a dataframe of tweets and creates a network from it. It can create a retweet network, a temporal text network, and a multilayer network. The networks are saved in gml format.
+
+
+## Data Processor
 The first step is to initialize the pipeline class giving the two files as input and the name of the COP.
 
 ```python
-from utils import Pipeline
-p = Pipeline(file_tweets, file_user, 'cop22')
+data = Data_processor(file_tweets, file_user, name)
+data.process_json()
+
 ```
-## process json
-Then we can process the json files, this creates a pandas dataframe contaning all the tweets in english. Moreover the dataframe is also stored in a pickle and csv for caching it, in fact the next rime you run the pipeline it loads the file instead of processing it every time.
+### Under the hood
+Let's see what happen when you run the process_json() function, firstly, if the files are present in the cache folder, it loads them, otherwise, it follows this pipeline:.
+- load_users_json: loads the json file of the users into a dataframe 
+- load_tweets_json: loads the json file of the tweets into a dataframe discarding the tweets with attachments
+- save dataframes: both in pickle (for machines) and csv(for humans) format in the cache folder
+
+### after the topic modeling
+There is the possibility to update the dataframe with the labeled topic, so that the object data contains all the data needed, it gets the labeled dataframe of the original tweets ( the topic modeling is not run on retweets to save save time and energy), and propagate the topic also to the retweets of the original tweets.
 
 ```python  
-p.process_json()
+df_retweet_labeled = data.update_df(df_labeled)
+
 ```
-## topic modeling 
-Then we can get the topics of the tweets using BERTopic, this creates a new column in the dataframe with the topic of the tweet. The topics are saved in a pickle file for caching. In [this](https://github.com/alessiogandelli/topic-modeling-evaluation) repository I conclude that BERTopic is the best topic modeling algorithm for this scenario. 
+## Topic Modeler
+Then we can get the topics of the tweets using BERTopic, this creates a new column in the dataframe with the topic of the tweet. The topics are saved in a pickle file for caching. In [this](https://github.com/alessiogandelli/topic-modeling-evaluation) repository I conclude that BERTopic is the best topic modeling algorithm for this scenario. You can choose the embedder you prefer
 
 ```python
-p.get_topics()
+tm = Topic_modeler(data.df_original, name = data.name, embedder_name='all-MiniLM-L6-v2', path_cache = data.path_cache)
+df_labeled = tm.get_topics()
+
+
 ```
+### label topics 
+we use openai gpt3.5turbo model to label the topic using the putput of the cTFIDF and some representative tweets. 
 
-## create temporal text network
-Finally we can create the network, the  `create_ttnetwork()` function takes as input the dataframe created in the previous stage (but you can use your own if you need it) and the title of the network.
+## Network Creator
+Finally we can create the networks using the full dataframe with topic labels. there are 3 possible types of network you can create
 
+```python
+nw = Network_creator(df_retweet_labeled, name = data.name, path = data.folder)
+```
+### Temporal Text Network
 The function creates a [temporal text network](https://appliednetsci.springeropen.com/articles/10.1007/s41109-018-0082-3) and two dictionaries that map the tweet id to its text and the couple (user, tweet) to the time of the tweet. The network is saved in gml format in the `networks` folder.
 
-
-The network is directed and bipartite, so there are two types of nodes: tweets and users
-
 ```python
-p.create_network(p.df_retweets_labeled, 'retweets')
+nw.create_ttnetwork(project = True)
 ```
+
 In this example we can see how a network is built, the small nodes are the tweets, while the other are the authors. The color of the tweets corresponds to the topic of the tweet. The edges are of three types:
 - user-tweet: if the user has tweeted the tweet
 - tweet-user: if the tweet mention the user
@@ -104,8 +126,12 @@ In this example we can see how a network is built, the small nodes are the tweet
 ![full network](https://github.com/alessiogandelli/tweets-to-topic-network/blob/main/data/full_network.png)
 
 
-## network projection
-Now we have two sets of nodes and we want only one: the authors. To achieve this I used a hybrid approach between iteration and recursion. First, it iterates over all the users, so for each user, the goal now is to create all the edges between this user and others. 
+
+#### Network projection
+if the project parameter is set to True the network is also projected into a retweet network (this is redundant, you can create a retweets network without passing from the ttn) and a network of retweets for each topic :
+
+In the temporal text network, we have two sets of nodes and we want only one: the authors. To achieve this I used a hybrid approach between iteration and recursion. First, it iterates over all the users, so for each user, the goal now is to create all the edges between this user and others. 
+
 For each user, we iterate over all its tweets recursively searching for the end of the chain. There are a few cases:
 - It is an original tweet with no mentions: do nothing 
 - It is an original tweet mentioning other users: create an edge between the user and the mentioned users
@@ -113,42 +139,27 @@ For each user, we iterate over all its tweets recursively searching for the end 
 
 In this process are also involved the topics of the tweets, so while projecting it, a network is created for each topic, and the edges are added to the corresponding network. The networks are saved in gml format in the `networks/projected` folder.
 
-The path is the same path of the gml file of the full network.
+The TTN is a very powerful tool, but it requires a lot of computational power and time. so if you do not need all the information contained, you can create the simple retweet network using the `retweet_network()` or the  `retweet_network_ml()` depending if you are interested in the multilayer network or not.
+
+### Retweet Network
+
+In this network the nodes are the users and the edges are the retweets, the network is saved in gml format in the `networks` folder.
 
 ```python
-p.project_network(path) # no need to run this, it is authomatically run in the previous step
+nw.create_retweet_network()
 ```
 
+### Retweet Network Multilayer
 
-## create multilayer network
-The multilayer network is created using the `create_multilayer_network()` function which uses the [multinet](https://github.com/uuinfolab/py_multinet) library developed by the infolab in Uppsala university. 
 
-This step is made inside the projection function, so you don't need to run it again.
-
-```python
-p.create_multilayer_network()
-```
+multiples retweets network created at topic level stacked together
 
 This is an example of how it looks like 
 
 ![multilayer network](https://github.com/alessiogandelli/tweets-to-topic-network/blob/main/data/projected_topics_ml.png)
 
 
-## alternative to the temporal text network (TTN)
-The TTN is a very powerful tool, but it requires a lot of computational power and time. so if you do not need all the information contained, you can create the simple retweet network using the `retweet_network()` or the  `retweet_network_ml()` depending if you are interested in the multilayer network or not.
 
-## differences between the two multilayer networks 
-you can create a multilayer network following two paths:
-1) process_json -> get_topics -> create_network -> project_network -> create_multilayer_network
-
-2) process_json -> get_topics -> retweet_network_ml
-
-The projection of the first one is not a retweet network, in fact it contains also the mention edges, we can call it an interaction network. The second one is a retweet network, so it contains only the retweet edges.
-
-
-
-## label topics 
-we use openai gpt3.5turbo model to label the topic using the putput of the cTFIDF and some representative tweets. 
 
 
 #  How to run it
@@ -159,11 +170,12 @@ suggestion: create a folder for each set of tweets you want to process, in our c
 
 - `networks`: contains the gml files of the temporal text network
 
-```python
+
+
 
 # A Real Example
 
-Processing around 400 tweets with the hashtag #cop22, this took around 3 hours on 2018 macbook air.
+Processing around 400k tweets with the hashtag #cop22, this took around 3 hours on 2018 macbook air.
 
 - json tweets: 878 MB
 - csv/pkl tweets: 236 MB
