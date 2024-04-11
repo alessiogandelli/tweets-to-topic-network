@@ -158,7 +158,7 @@ class Topic_modeler:
 
     def _save_files(self):
         self.df.to_pickle(self.df_labeled_path)
-        self.model.save(self.model_path)
+        self.model.save(self.model_path, serialization="safetensors", save_ctfidf=True)
 
     def label_topics(self):
         llm = OpenAI(temperature=0.3)
