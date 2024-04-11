@@ -1,7 +1,7 @@
 # %%
-from tweets_to_topic_network.data_processor import Data_processor 
-from tweets_to_topic_network.topic_modeler import Topic_modeler
-from tweets_to_topic_network.network_creator import Network_creator
+from tweets_to_topic_network.data import Data_processor 
+from tweets_to_topic_network.topic import Topic_modeler
+from tweets_to_topic_network.network import Network_creator
 
 n_cop = 'cop22'
 

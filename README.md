@@ -1,5 +1,7 @@
 # tweets-to-network
-
+```bash
+pip install tweets-to-topic-network
+```
 
 This repository contains the code to 
 - create networks from a set of tweets in json format (as they come from the API (RIP))

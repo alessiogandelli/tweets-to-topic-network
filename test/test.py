@@ -18,7 +18,7 @@ import pandas as pd
 # %%
 import numpy as np
 import pandas as pd
-from tweets_to_topic_network.network_creator import Network_creator
+from tweets_to_topic_network.network import Network_creator
 
 df = pd.DataFrame({
     'id' : ['t1', 't2', 't3', 't4', 't5', 't6', 't7'],
