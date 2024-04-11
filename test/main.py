@@ -6,13 +6,13 @@ from tweets_to_topic_network.network import Network_creator
 n_cop = 'cop22'
 
 file_tweets = '/Users/alessiogandelli/data/' + n_cop + '/' + n_cop + '.json'
-file_user = '/Users/alessiogandelli/data/' + n_cop + '/users_'+ n_cop+'.json'
+#file_user = '/Users/alessiogandelli/data/' + n_cop + '/users_'+ n_cop+'.json'
 
 # file_tweets = '/Users/alessiogandelli/dev/uni/tweets-to-topic-network/data/toy.json'
 # file_user = '/Users/alessiogandelli/dev/uni/tweets-to-topic-network/data/toy_users.json'
 
 #%%
-data = Data_processor(file_tweets, file_user, '22')
+data = Data_processor(file_tweets, n_cop = n_cop)
 data.process_json()
 
 tm = Topic_modeler(data.df_original, name = data.name, embedder_name='all-MiniLM-L6-v2', path_cache = data.path_cache)

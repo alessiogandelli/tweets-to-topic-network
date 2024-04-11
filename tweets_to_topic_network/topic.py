@@ -12,7 +12,7 @@ from qdrant_client import QdrantClient, models
 
 os.environ['TOKENIZERS_PARALLELISM'] = 'false' # to avoid a warning 
 openai.api_key = os.getenv("OPENAI_API_KEY")    
-client = QdrantClient("localhost:6333") # vector database saved in memory
+client = QdrantClient(os.getenv("QDRANT_URL")    ) # vector database saved in memory
 
 collection_name = 'cop'
 

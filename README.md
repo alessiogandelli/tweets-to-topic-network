@@ -12,9 +12,13 @@ from a set of tweets it is possibile to generate multiple networks:
 - *retweet network multilayer*: a network where the nodes are the users and the edges are the retweets, but the edges are divided in layers based on the topic of the tweet
 - *temporal text network*: a bipartite network where the nodes are the tweets and the users and the edges are the interactions between them
 
-#  Quickstart
+#  Usage
 
 ```python
+from tweets_to_topic_network.data import Data_processor 
+from tweets_to_topic_network.topic import Topic_modeler
+from tweets_to_topic_network.network import Network_creator
+
 data = Data_processor(file_tweets, file_user, '22')
 data.process_json() # this process the data and creates several dataframes useful for the next steps
 
@@ -28,25 +32,19 @@ nw = Network_creator(df_retweet_labeled, name = data.name, path = data.folder)
 nw.create_retweet_network() # this creates the retweet network
 nw.create_ttnetwork()   # this creates the temporal text network
 nw.create_retweet_ml()  # this creates the multilayer network
-
 ```
 
 
 # Input 
-Th input is in [jsonl](https://jsonlines.org/) format, so one JSON per line representing or a user or a tweet depending on the file. You can find an example in [this](https://github.com/alessiogandelli/tweets-to-topic-network/blob/main/data/toy.json) file. This format is the one you can get querying the Twitter API.
+Th input is in [jsonl](https://jsonlines.org/) format, so one JSON per line representing or a user or a tweet depending on the file. You can find an example in [this](https://github.com/alessiogandelli/tweets-to-topic-network/blob/main/data/toy.json) file. This format is the one you can get querying the Twitter API. make sure your input file is in this format.
+
 ## JSON tweets file 
 The JSON tweets file contains information about all tweets involved in the conversation. Each tweet is represented as a JSON object with the following fields:
 
 - `author`: The ID of the tweet author.
-- `author_name`: The username of the tweet author.
 - `text`: The content of the tweet.
-- `created_At`: The timestamp when the tweet was created.
+- `created_at`: The timestamp when the tweet was created.
 - `lang`: The language of the tweet.
-- `reply_count`: The number of replies to the tweet.
-- `retweet_count`: The number of retweets of the tweet.
-- `like_count`: The number of likes on the tweet.
-- `quote_count`: The number of quotes of the tweet.
-- `impression_count`: The number of impressions (times the tweet was displayed) of the tweet.
 - `conversation_id`: The ID of the conversation the tweet belongs to (if available).
 - `referenced_type`: The type of the referenced tweet (if available).
 - `referenced_id`: The ID of the referenced tweet (if available).
@@ -54,14 +52,12 @@ The JSON tweets file contains information about all tweets involved in the conve
 - `mentions_id`: A list of IDs of users mentioned in the tweet.
 
 
-## JSON users file
-The user's file contains information about all users involved in the conversation. Each user is represented as a JSON object with the following fields:
+## JSON users file (optional)
+The user's file is used to get the username of the author of the tweet. 
 
 - `id`: The ID of the user.
 - `username`: The username of the user.
-- `tweet_count`: The number of tweets posted by the user.
-- `followers`: The number of followers the user has.
-- `following`: The number of accounts the user is following.
+
 
 
 # Classes
