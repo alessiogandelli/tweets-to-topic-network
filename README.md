@@ -53,7 +53,7 @@ docker pull qdrant/qdrant
 
 ```
 
-this will create a set of folders in your current directory, to explore the embeddings stored go on [http://localhost:6333/dashboard#]
+this will create a set of folders in your current directory, to explore the embeddings stored go on [http://localhost:6333/dashboard](http://localhost:6333/dashboard)
 ```shell
 docker run -p 6333:6333 -p 6334:6334  -v $(pwd)/qdrant_storage:/qdrant/storage:z qdrant/qdrant
 
