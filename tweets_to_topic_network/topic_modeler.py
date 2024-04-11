@@ -33,7 +33,7 @@ class Topic_modeler:
 
     def get_topics(self):
         """
-        Get the topics of the original tweets and updates the dataframe with the topics and topic probabilities. 
+        Main function of the class, get the topics of the original tweets and updates the dataframe with the topics and topic probabilities. 
         then save the embeddings in qdrant and save the labeled dataframe in the cache folder.
 
         """
@@ -79,8 +79,17 @@ class Topic_modeler:
         return docs
 
     def _get_embeddings(self, docs):
-        if(self.embedder_name == 'openai'):
+        if(self.embedder_name == 'text-embedding-ada-002'):
             embs = openai.Embedding.create(input = docs, model="text-embedding-ada-002")['data']
+            self.embedder = None
+            self.embeddings = np.array([np.array(emb['embedding']) for emb in embs])
+        elif(self.embedder_name == 'text-embedding-3-large'):
+            embs = openai.Embedding.create(input = docs, model="text-embedding-3-large")['data']
+            self.embedder = None
+            self.embeddings = np.array([np.array(emb['embedding']) for emb in embs])
+        
+        elif(self.embedder_name == 'text-embedding-3-small'):
+            embs = openai.Embedding.create(input = docs, model="text-embedding-3-small")['data']
             self.embedder = None
             self.embeddings = np.array([np.array(emb['embedding']) for emb in embs])
         else:

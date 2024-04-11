@@ -1,7 +1,7 @@
 # %%
-from dataProcessor.data_processor import Data_processor 
-from topicModeler.topic_modeler import Topic_modeler
-from networkCreator.network_creator import Network_creator
+from tweets_to_topic_network.data_processor import Data_processor 
+from tweets_to_topic_network.topic_modeler import Topic_modeler
+from tweets_to_topic_network.network_creator import Network_creator
 
 n_cop = 'cop22'
 
@@ -18,7 +18,7 @@ data.process_json()
 tm = Topic_modeler(data.df_original, name = data.name, embedder_name='all-MiniLM-L6-v2', path_cache = data.path_cache)
 df_labeled = tm.get_topics()
 
-
+#%%
 df_retweet_labeled = data.update_df(df_labeled)
 
 nw = Network_creator(df_retweet_labeled, name = data.name, path = data.folder)
