@@ -14,24 +14,49 @@ from a set of tweets it is possibile to generate multiple networks:
 
 #  Usage
 
+import the classes
 ```python
 from tweets_to_topic_network.data import Data_processor 
 from tweets_to_topic_network.topic import Topic_modeler
 from tweets_to_topic_network.network import Network_creator
+```
 
+load the json files and process them
+```python
 data = Data_processor(file_tweets, file_user, '22')
 data.process_json() # this process the data and creates several dataframes useful for the next steps
+```
 
+run topic modeling 
+```python
 tm = Topic_modeler(data.df_original, name = data.name, embedder_name='all-MiniLM-L6-v2', path_cache = data.path_cache)
 df_labeled = tm.get_topics() # this creates a new column in the dataframe with the topic of the tweet
-
-
+```
+update the dataframe with the labeled topics
+```python
 df_retweet_labeled = data.update_df(df_labeled) # this updates the dataframe with the labeled topics
-
+```
+create the networks 
+```python
 nw = Network_creator(df_retweet_labeled, name = data.name, path = data.folder)
 nw.create_retweet_network() # this creates the retweet network
 nw.create_ttnetwork()   # this creates the temporal text network
 nw.create_retweet_ml()  # this creates the multilayer network
+```
+
+## Qdrant integration
+
+you have the opportunity to store the embeddings in a [qdrant](https://qdrant.tech/documentation/quick-start/) instance, you need docker, if you do not do it, nothing happens
+
+```shell
+docker pull qdrant/qdrant
+
+```
+
+this will create a set of folders in your current directory, to explore the embeddings stored go on [http://localhost:6333/dashboard#]
+```shell
+docker run -p 6333:6333 -p 6334:6334  -v $(pwd)/qdrant_storage:/qdrant/storage:z qdrant/qdrant
+
 ```
 
 
