@@ -26,7 +26,7 @@ class Topic_modeler:
         self.name = name
 
         self.df_labeled_path = os.path.join(self.path_cache, 'tweets_'+self.name+'_topics.pkl')
-        self.model_path = os.path.join(self.path_cache, 'model_'+self.name+'.pkl')
+        self.model_path = os.path.join(self.path_cache, 'model_'+self.name)
         self.model = None
         self.embeddings = None
         

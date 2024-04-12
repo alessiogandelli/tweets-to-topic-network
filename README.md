@@ -27,21 +27,29 @@ data = Data_processor(file_tweets, file_user, '22')
 data.process_json() # this process the data and creates several dataframes useful for the next steps
 ```
 
-run topic modeling 
+Run topic modeling, takes as parameters
+- dataframe: only requirement is the column 'text', 
+- name: name of the dataset
+- embeddedder_name: the supported embedding models are all the sentence transfers models, you can find them [here](https://www.sbert.net/docs/pretrained_models.html), and openai `text-embedding-ada-002` , `text-embedding-3-large` `text-embedding-3-small`
+- path_cache: the path where to save the labeled dataframe and the model in safetensor format
+
+returns the input dataframe with a new column with the topic of the tweet
+
 ```python
 tm = Topic_modeler(data.df_original, name = data.name, embedder_name='all-MiniLM-L6-v2', path_cache = data.path_cache)
 df_labeled = tm.get_topics() # this creates a new column in the dataframe with the topic of the tweet
 ```
-update the dataframe with the labeled topics
+Update the dataframe with the labeled topics
+
 ```python
 df_retweet_labeled = data.update_df(df_labeled) # this updates the dataframe with the labeled topics
 ```
 create the networks 
 ```python
 nw = Network_creator(df_retweet_labeled, name = data.name, path = data.folder)
-nw.create_retweet_network() # this creates the retweet network
-nw.create_ttnetwork()   # this creates the temporal text network
-nw.create_retweet_ml()  # this creates the multilayer network
+rt_network = nw.create_retweet_network() # this creates the retweet network
+rt_network_ml = nw.create_retweet_ml()   # this creates the multilayer network
+tt_network = nw.create_ttnetwork()       # this creates the temporal text network
 ```
 
 ## Qdrant integration
@@ -54,14 +62,21 @@ docker pull qdrant/qdrant
 ```
 
 this will create a set of folders in your current directory, to explore the embeddings stored go on [http://localhost:6333/dashboard](http://localhost:6333/dashboard)
+
 ```shell
 docker run -p 6333:6333 -p 6334:6334  -v $(pwd)/qdrant_storage:/qdrant/storage:z qdrant/qdrant
 
 ```
+create a dotenv file with the following variables 
+
+```shell
+OPENAI_API_KEY=your-api-key
+QDRANT_URL=http://localhost:6333
+```
 
 
 # Input 
-Th input is in [jsonl](https://jsonlines.org/) format, so one JSON per line representing or a user or a tweet depending on the file. You can find an example in [this](https://github.com/alessiogandelli/tweets-to-topic-network/blob/main/data/toy.json) file. This format is the one you can get querying the Twitter API. make sure your input file is in this format.
+The input is in [jsonl](https://jsonlines.org/) format, so one JSON per line representing or a user or a tweet depending on the file. You can find an example in [this](https://github.com/alessiogandelli/tweets-to-topic-network/blob/main/data/toy.json) file. This format is the one you can get querying the Twitter API. make sure your input file is in this format.
 
 ## JSON tweets file 
 The JSON tweets file contains information about all tweets involved in the conversation. Each tweet is represented as a JSON object with the following fields:
@@ -88,36 +103,36 @@ The user's file is used to get the username of the author of the tweet.
 # Classes
 The pipeline is divided into three classes, each of them is independent and can be used separately.
 
-- dataProcessor: takes the two json files and creates a pandas dataframe with all the tweets in english. It also creates a cache of the dataframe in csv and pickle format.
+- *Data_processor*: takes the two json files (or just one) and creates a pandas dataframe with all the tweets in english. It also creates a cache of the dataframe in csv and pickle format.
 
-- TopicModeler: takes a dataframe and labels the tweets with a topic using BERTopic. It also creates a cache of the labeled dataframe in csv and pickle format.
+- *Topic_modeler*: takes a dataframe and labels the tweets with a topic using BERTopic. It also creates a cache of the labeled dataframe in csv and pickle format.
 
-- NetworkCreator: takes a dataframe of tweets and creates a network from it. It can create a retweet network, a temporal text network, and a multilayer network. The networks are saved in gml format.
+- *Network_creator*: takes a dataframe of tweets and creates a network from it. It can create a retweet network, a temporal text network, and a multilayer network. The networks are saved in gml format.
 
 
 ## Data Processor
-The first step is to initialize the pipeline class giving the two files as input and the name of the COP.
+The first step is to initialize the pipeline class giving the two files as input and the name of the COP. (file_user is optional, if not present the username will be the user id)
 
 ```python
-data = Data_processor(file_tweets, file_user, name)
+data = Data_processor(file_tweets=file_tweets, file_user=file_user, n_cop='22')
 data.process_json()
 
 ```
 ### Under the hood
-Let's see what happen when you run the process_json() function, firstly, if the files are present in the cache folder, it loads them, otherwise, it follows this pipeline:.
+Let's see what happen when you run the`process_json()` function, firstly, if the files are present in the cache folder, it loads them, otherwise, it follows this pipeline:.
 - load_users_json: loads the json file of the users into a dataframe 
 - load_tweets_json: loads the json file of the tweets into a dataframe discarding the tweets with attachments
 - save dataframes: both in pickle (for machines) and csv(for humans) format in the cache folder
 
-### after the topic modeling
-There is the possibility to update the dataframe with the labeled topic, so that the object data contains all the data needed, it gets the labeled dataframe of the original tweets ( the topic modeling is not run on retweets to save save time and energy), and propagate the topic also to the retweets of the original tweets.
+### After the topic modeling
+There is the possibility to update the dataframe with the labeled topic, so that the object data contains all the data needed, it gets the labeled dataframe of the original tweets (the topic modeling is not run on retweets to save save time and energy), and propagate the topic also to the retweets of the original tweets.
 
 ```python  
 df_retweet_labeled = data.update_df(df_labeled)
 
 ```
 ## Topic Modeler
-Then we can get the topics of the tweets using BERTopic, this creates a new column in the dataframe with the topic of the tweet. The topics are saved in a pickle file for caching. In [this](https://github.com/alessiogandelli/topic-modeling-evaluation) repository I conclude that BERTopic is the best topic modeling algorithm for this scenario. You can choose the embedder you prefer
+Then we can get the topics of the tweets using BERTopic, this creates a new column in the dataframe with the topic of the tweet. The topics are saved in a pickle file for caching. In [this](https://github.com/alessiogandelli/topic-modeling-eval) repository I conclude that BERTopic is the best topic modeling algorithm for this scenario. You can choose the embedder you prefer
 
 ```python
 tm = Topic_modeler(data.df_original, name = data.name, embedder_name='all-MiniLM-L6-v2', path_cache = data.path_cache)
@@ -125,7 +140,7 @@ df_labeled = tm.get_topics()
 
 
 ```
-### label topics 
+### label topics (todo)
 we use openai gpt3.5turbo model to label the topic using the putput of the cTFIDF and some representative tweets. 
 
 ## Network Creator
@@ -187,7 +202,7 @@ This is an example of how it looks like
 
 #  How to run it
 
-suggestion: create a folder for each set of tweets you want to process, in our case one for each COP. Inside this folder there should be the two jsonl files, one for the tweets and one for the users. After running the main script( either using make or just running main.py) in that folder you will find the following folders:
+suggestion: create a folder for each set of tweets you want to process, in our case one for each COP. Inside this folder there should be the two jsonl files, one for the tweets and one for the users. The script will create the following directories:
 
 - `cache`: contains the csv and pickle files of the intermediate steps of the pipeline, from the cleaned dataset in csv to the label of the topics.
 
