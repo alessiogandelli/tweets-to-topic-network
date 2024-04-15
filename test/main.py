@@ -15,6 +15,8 @@ file_tweets = '/Users/alessiogandelli/data/' + n_cop + '/' + n_cop + '.json'
 data = Data_processor(file_tweets, n_cop = n_cop)
 data.process_json()
 
+
+#%%
 tm = Topic_modeler(data.df_original, name = data.name, embedder_name='all-MiniLM-L6-v2', path_cache = data.path_cache)
 df_labeled = tm.get_topics()
 

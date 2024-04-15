@@ -70,12 +70,20 @@ class Topic_modeler:
         # add topics label to the originaldataframe and for the not original tweet put the reference of the original tweet in that field 
 
     def _preprocess(self):
-        docs = self.df['text'].tolist()
-        docs = [re.sub(r"http\S+", "", doc) for doc in docs] #  remove urls
-        docs = [re.sub(r"@\S+", "", doc) for doc in docs] #  remove mentions 
-        docs = [re.sub(r"#\S+", "", doc) for doc in docs] #  remove hashtags
-        docs = [re.sub(r"\n", "", doc) for doc in docs] #  remove new lines
-        docs = [doc.strip() for doc in docs] #strip 
+
+        self.df['new_text'] = self.df['text']
+        self.df['new_text'] =  self.df['new_text'].str.replace(r"http\S+", "")
+        self.df['new_text'] =  self.df['new_text'].str.replace(r"@\S+", "")
+        self.df['new_text'] =  self.df['new_text'].str.replace(r"#\S+", "")
+        self.df['new_text'] =  self.df['new_text'].str.replace(r"\n", "")
+        self.df['new_text'] =  self.df['new_text'].str.strip()
+
+        # if new text is empty delete the row
+        self.df = self.df[self.df['new_text'] != '']
+
+        docs = self.df['new_text'].tolist()
+
+        
         return docs
 
     def _get_embeddings(self, docs):
