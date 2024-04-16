@@ -99,6 +99,51 @@ The user's file is used to get the username of the author of the tweet.
 - `username`: The username of the user.
 
 
+# Files created: cache and networks
+
+## Cache
+When the data is processed it will be saved in a cache folder to avoid processing the same data multiple times. The cache folder will be in the same folder as the file you are processing, i suggest you to create a folder for each set of tweets you want to process. Pickle files are for machines, csv files are for humans.
+The cache folder will contain the following structure:
+
+```shell
+cache
+├── data
+│   ├── tweets_cop22.csv        # this is the dataframe of the tweets 
+│   ├── tweets_cop22.pkl
+│   ├── tweets_cop22_topics.pkl # this is the labeled dataframe with topics
+│   ├── users_cop22.csv         # this is the dataframe of the users
+│   └── users_cop22.pkl
+└── tm
+    └── all-MiniLM-L6-v2            # the folder for this embedding model
+        ├── embeddings_cop22.pkl    # the embeddings of the tweets 
+        ├── model_cop22             # the model in safetensor format
+        │   ├── config.json
+        │   ├── ctfidf.safetensors
+        │   ├── ctfidf_config.json
+        │   ├── topic_embeddings.safetensors
+        │   └── topics.json
+        └── topics_cop22.csv    # topics, keyworkds and representative tweets
+
+```
+
+## Networks
+The networks will be saved in the networks folder in the same folder as the file you are processing. The networks folder will contain the following structure:
+
+```shell
+├── networks
+│   ├── cop22_retweet.gml                   # retweet network
+│   ├── cop22_retweet_ml.gml                # retweet network multilayer
+│   ├── cop22_retweet_network_ml.gml       # retweet network multilayer from projection
+│   ├── cop22_ttt.gml                   # temporal text network
+│   └── projected                   # each layer (topic) of the multilayer network
+│       ├── cop22__prj_-1.0.gml
+│       ├── cop22__prj_0.0.gml
+│       ├── cop22__prj_1.0.gml
+│       ├── cop22__prj_10.0.gml
+│       ├── cop22__prj_11.0.gml
+
+
+```
 
 # Classes
 The pipeline is divided into three classes, each of them is independent and can be used separately.
