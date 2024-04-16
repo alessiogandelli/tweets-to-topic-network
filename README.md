@@ -127,7 +127,7 @@ cache
 ```
 
 ## Networks
-The networks will be saved in the networks folder in the same folder as the file you are processing. The networks folder will contain the following structure:
+The networks will be saved in the networks folder in the same folder as the file you are processing. Note that there are two different retweet network, one is generated from the temporal text network, the other directly from the tweets, there could be differences like self edges, still have to figure out which one is better. The networks folder will contain the following structure:
 
 ```shell
 ├── networks
