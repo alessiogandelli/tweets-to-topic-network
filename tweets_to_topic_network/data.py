@@ -18,9 +18,9 @@ class Data_processor:
 
         self.folder = '/'.join(file_tweets.split('/')[:-1])
         self.path_cache = os.path.join(self.folder, 'cache')
-        self.tweets_file = os.path.join(self.path_cache,'tweets_'+self.name)
-        self.users_file = os.path.join(self.path_cache,'users_'+self.name)
-        self.labeled_file = os.path.join(self.path_cache,'retweet_labeled_'+self.name)
+        self.tweets_file = os.path.join(self.path_cache,'data','tweets_'+self.name)
+        self.users_file = os.path.join(self.path_cache,'data','users_'+self.name)
+        self.labeled_file = os.path.join(self.path_cache,'data', 'retweet_labeled_'+self.name)
 
         # dataframes
         self.df_tweets = None
@@ -67,8 +67,11 @@ class Data_processor:
     
     def _is_cached(self):
        
-        if not os.path.exists(self.path_cache):
+        if not os.path.exists(self.path_cache): # mkdir cache
             os.makedirs(self.path_cache)
+        
+        if not os.path.exists(os.path.join(self.path_cache, 'data')): # mkdir cache/data
+            os.makedirs(os.path.join(self.path_cache, 'data'))
 
         return os.path.exists(self.tweets_file+'.pkl') and os.path.exists(self.users_file+'.pkl')
 

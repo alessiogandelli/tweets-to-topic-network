@@ -22,6 +22,8 @@ import openai
 import datetime
 from qdrant_client import QdrantClient, models
 import json
+from bertopic.representation import OpenAI
+
 
 
 load_dotenv()

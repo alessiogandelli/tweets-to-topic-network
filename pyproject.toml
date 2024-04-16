@@ -18,6 +18,7 @@ qdrant-client = "^1.8.2"
 uunet = "^2.1.1"
 networkx = "^3.3"
 igraph = "^0.11.4"
+fastembed = "^0.2.6"
 
 
 

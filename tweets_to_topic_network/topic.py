@@ -9,10 +9,16 @@ from sklearn.feature_extraction.text import CountVectorizer
 from bertopic.vectorizers import ClassTfidfTransformer
 import openai
 from qdrant_client import QdrantClient, models
+from fastembed import TextEmbedding
+from bertopic.representation import OpenAI
+import pickle 
+
+
 
 os.environ['TOKENIZERS_PARALLELISM'] = 'false' # to avoid a warning 
 openai.api_key = os.getenv("OPENAI_API_KEY")    
-client = QdrantClient(os.getenv("QDRANT_URL")) # vector database saved in memory
+qdrant_client = QdrantClient(os.getenv("QDRANT_URL")) # vector database saved in memory
+openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY")) # openai api key
 
 collection_name = 'cop'
 
@@ -25,8 +31,12 @@ class Topic_modeler:
         self.embedder_name = embedder_name
         self.name = name
 
-        self.df_labeled_path = os.path.join(self.path_cache, 'tweets_'+self.name+'_topics.pkl')
-        self.model_path = os.path.join(self.path_cache, 'model_'+self.name)
+        self.df_labeled_path = os.path.join(self.path_cache, 'data' ,'tweets_'+self.name+'_topics.pkl')
+        self.tm_path = os.path.join(self.path_cache,'tm', self.embedder_name)
+        self.model_path = os.path.join( self.tm_path, 'model_'+self.name)
+        self.embeddings_path = os.path.join( self.tm_path ,'embeddings_'+self.name+'.pkl')
+        self.topic_path = os.path.join( self.tm_path ,'topics_'+self.name+'.csv')
+
         self.model = None
         self.embeddings = None
         
@@ -41,13 +51,17 @@ class Topic_modeler:
         time = datetime.datetime.now()
         if not os.path.exists(self.path_cache):
             os.makedirs(self.path_cache)
+        
+        if not os.path.exists(self.tm_path):
+            os.makedirs(self.tm_path)
 
         
         # if pkl file of the labeled df exists, load it from the cache
-        if os.path.exists(self.df_labeled_path):
+        if os.path.exists(self.df_labeled_path) and os.path.exists(self.model_path) and os.path.exists(self.embeddings_path):
             print('using cached topics')
             self.df = pd.read_pickle(self.df_labeled_path)
             self.model = BERTopic.load(self.model_path)
+            self.embeddings = pickle.load(open(self.embeddings_path, 'rb'))
         else:
             print('running topic modeling')
     
@@ -87,6 +101,19 @@ class Topic_modeler:
         return docs
 
     def _get_embeddings(self, docs):
+
+        embeddings_file = os.path.join(self.path_cache, 'embeddings_' + self.name + '.pkl')
+
+        if os.path.exists(embeddings_file):
+            try:
+                self.embeddings = pickle.load(open(embeddings_file, 'rb'))
+                return
+            except Exception as e:
+                print(f"Error loading embeddings from cache: {e}")
+
+        print('     Embeddings not found in cache, using' + self.embedder_name + ' to get embeddings')
+
+
         if(self.embedder_name == 'text-embedding-ada-002'):
             embs = openai.Embedding.create(input = docs, model="text-embedding-ada-002")['data']
             self.embedder = None
@@ -101,31 +128,39 @@ class Topic_modeler:
             self.embedder = None
             self.embeddings = np.array([np.array(emb['embedding']) for emb in embs])
         else:
-            print(self.embedder_name, docs[:2])
             self.embedder = SentenceTransformer(self.embedder_name)
             self.embeddings = self.embedder.encode(docs)
+        
+                #save embeddings to pickle file
+        with open(embeddings_file, 'wb') as f:
+            pickle.dump(self.embeddings, f)
 
     def _use_BERTopic(self, docs):
         vectorizer_model = CountVectorizer(stop_words="english") 
         # we can also change some parameter of the cTFIDF model https://maartengr.github.io/BERTopic/getting_started/ctfidf/ctfidf.html#reduce_frequent_words
         ctfidf_model = ClassTfidfTransformer(reduce_frequent_words=True)
+        representation_model = OpenAI(openai_client, model="gpt-3.5-turbo", delay_in_seconds=10, chat=True)
+
         model = BERTopic( 
                             vectorizer_model =   vectorizer_model,
                             ctfidf_model      =   ctfidf_model,
                             nr_topics        =  'auto',
                             min_topic_size   =   max(int(len(docs)/800),10),
                             embedding_model  = self.embedder,
+                            #representation_model = representation_model
                         )
+        print('         model created')
         
         try:
             topics ,probs = model.fit_transform(docs, embeddings = self.embeddings)
             self.df['topic'] = topics    
             self.df['topic_prob'] = probs   
-            print('topics created')
+            print('         model fitted')
+
             #df_cop['embedding'] = embeddings   
-            model.get_topic_info().to_csv(os.path.join(self.path_cache,'topics_cop22.csv'))
+            model.get_topic_info().to_csv(self.topic_path)
             self.model = model          
-            print('model saved')
+            print('         model saved')
 
         except Exception as e:
             print(e)
@@ -138,8 +173,12 @@ class Topic_modeler:
         topics = self.df['topic'].tolist()
         probs = self.df['topic_prob'].tolist()
 
+
+        
+
+
         try:
-            client.create_collection(
+            qdrant_client.create_collection(
                 collection_name= self.name,
                 vectors_config=models.VectorParams(size=len(self.embeddings[0]), distance=models.Distance.COSINE),
             )
@@ -157,7 +196,7 @@ class Topic_modeler:
                 )
                 for idx, vector, text, topic, prob in zip(ids, vectors, docs, topics, probs)
             ]
-            client.upload_points(self.name, points)
+            qdrant_client.upload_points(self.name, points)
             
 
         except(Exception) as e:
@@ -169,5 +208,16 @@ class Topic_modeler:
         self.model.save(self.model_path, serialization="safetensors", save_ctfidf=True)
 
     def label_topics(self):
+        prompt = """
+        I have a topic that contains the following documents: 
+        [DOCUMENTS]
+        The topic is described by the following keywords: [KEYWORDS]
+
+        Based on the information above, extract a short topic label in the following format:
+        topic: <topic label>
+        """
+
+
+
         pass
        
