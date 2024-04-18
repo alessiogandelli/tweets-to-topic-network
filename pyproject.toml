@@ -19,6 +19,9 @@ uunet = "^2.1.1"
 networkx = "^3.3"
 igraph = "^0.11.4"
 fastembed = "^0.2.6"
+umap-learn = "^0.5.6"
+langchain = "^0.1.16"
+flask = "^3.0.3"
 
 
 

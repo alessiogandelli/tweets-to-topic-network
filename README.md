@@ -148,7 +148,7 @@ The networks will be saved in the networks folder in the same folder as the file
 # Classes
 The pipeline is divided into three classes, each of them is independent and can be used separately.
 
-- *Data_processor*: takes the two json files (or just one) and creates a pandas dataframe with all the tweets in english. It also creates a cache of the dataframe in csv and pickle format.
+- *Data_processor*: takes the two json files (or just one) and creates a pandas dataframe with all the tweets . It also creates a cache of the dataframe in csv and pickle format.
 
 - *Topic_modeler*: takes a dataframe and labels the tweets with a topic using BERTopic. It also creates a cache of the labeled dataframe in csv and pickle format.
 

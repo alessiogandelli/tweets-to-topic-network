@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.3] - 2024-04-16
 
 ### Changed
-- cache structure now has more fodlers and can save multiple models (using different embeddings)
+- cache structure now has more folders and can save multiple models (using different embeddings)
 
 ## [0.1.2] - 2024-04-13
 ### Changed

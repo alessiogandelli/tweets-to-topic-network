@@ -17,12 +17,15 @@ data.process_json()
 
 
 #%%
-tm = Topic_modeler(data.df_original, name = data.name, embedder_name='all-MiniLM-L6-v2', path_cache = data.path_cache)
+tm = Topic_modeler(data.df_original, name = data.name, embedder_name='BAAI/bge-base-en-v1.5', path_cache = data.path_cache)
 df_labeled = tm.get_topics()
+
 
 #%%
 df_retweet_labeled = data.update_df(df_labeled)
 
+
+#%%
 nw = Network_creator(df_retweet_labeled, name = data.name, path = data.folder)
 G = nw.create_retweet_network()
 nw.create_ttnetwork()
