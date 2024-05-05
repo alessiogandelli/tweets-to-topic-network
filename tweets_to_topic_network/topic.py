@@ -7,7 +7,6 @@ from sentence_transformers import SentenceTransformer
 from bertopic import BERTopic
 from sklearn.feature_extraction.text import CountVectorizer
 from bertopic.vectorizers import ClassTfidfTransformer
-import openai
 from qdrant_client import QdrantClient, models
 from fastembed import TextEmbedding
 import pickle 
@@ -17,15 +16,13 @@ from langchain.llms import OpenAI as LLMOpenAI
 from bertopic.representation import OpenAI as BERTOpenAI
 
 from langchain.chains import LLMChain
-
+from openai import OpenAI
+client = OpenAI()
 
 
 
 os.environ['TOKENIZERS_PARALLELISM'] = 'false' # to avoid a warning 
-openai.api_key = os.getenv("OPENAI_API_KEY")    
 qdrant_client = QdrantClient(os.getenv("QDRANT_URL")) # vector database saved in memory
-openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY")) # openai api key
-
 collection_name = 'cop'
 
 
@@ -125,17 +122,9 @@ class Topic_modeler:
         print('     Embeddings not found in cache, using' + self.embedder_name + ' to get embeddings')
 
 
-        if(self.embedder_name == 'text-embedding-ada-002'):
-            embs = openai.Embedding.create(input = docs, model="text-embedding-ada-002")['data']
-            self.embedder = None
-            self.embeddings = np.array([np.array(emb['embedding']) for emb in embs])
-        elif(self.embedder_name == 'text-embedding-3-large'):
-            embs = openai.Embedding.create(input = docs, model="text-embedding-3-large")['data']
-            self.embedder = None
-            self.embeddings = np.array([np.array(emb['embedding']) for emb in embs])
-        
-        elif(self.embedder_name == 'text-embedding-3-small'):
-            embs = openai.Embedding.create(input = docs, model="text-embedding-3-small")['data']
+        if(self.embedder_name.startswith('text-embedding')):
+            print('         using openai')
+            embs = client.embeddings.create(input = docs, model=self.embedder_name)['data']
             self.embedder = None
             self.embeddings = np.array([np.array(emb['embedding']) for emb in embs])
         else:

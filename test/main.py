@@ -17,7 +17,7 @@ data.process_json()
 
 
 #%%
-tm = Topic_modeler(data.df_original, name = data.name, embedder_name='BAAI/bge-base-en-v1.5', path_cache = data.path_cache)
+tm = Topic_modeler(data.df_original, name = data.name, embedder_name='all-MiniLM-L6-v2', path_cache = data.path_cache)
 df_labeled = tm.get_topics()
 
 
