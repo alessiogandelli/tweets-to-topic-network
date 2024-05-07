@@ -26,3 +26,24 @@ df_labeled = tm.get_topics()
 
 
 # %%
+# tm.docs is a list of strings get the lenght of each 
+
+len_docs = [len(doc) for doc in tm.docs]
+# %%
+
+from openai import OpenAI
+openai_client = OpenAI()
+import numpy as np
+
+
+batch_size = 1000
+num_batches = len(tm.docs) // batch_size + (len(tm.docs) % batch_size != 0)
+tm.embeddings = []
+
+for i in range(num_batches):
+    print(f'         batch {i+1}/{num_batches}')
+    batch = tm.docs[i*batch_size:(i+1)*batch_size]
+    print(batch[:5])
+    embs = openai_client.embeddings.create(input = batch, model=tm.embedder_name).data
+    tm.embeddings.extend([np.array(emb.embedding) for emb in embs])
+# %%

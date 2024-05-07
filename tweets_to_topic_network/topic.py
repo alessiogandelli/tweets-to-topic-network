@@ -17,7 +17,7 @@ from bertopic.representation import OpenAI as BERTOpenAI
 
 from langchain.chains import LLMChain
 from openai import OpenAI
-client = OpenAI()
+openai_client = OpenAI()
 
 
 
@@ -124,9 +124,20 @@ class Topic_modeler:
 
         if(self.embedder_name.startswith('text-embedding')):
             print('         using openai')
-            embs = client.embeddings.create(input = docs, model=self.embedder_name)['data']
+
+            batch_size = 1000
+            num_batches = len(self.docs) // batch_size + (len(self.docs) % batch_size != 0)
+            self.embeddings = []
+
+            for i in range(num_batches):
+                print(f'         batch {i+1}/{num_batches}')
+                batch = self.docs[i*batch_size:(i+1)*batch_size]
+                print(batch[:5])
+                embs = openai_client.embeddings.create(input = batch, model=self.embedder_name).data
+                self.embeddings.extend([np.array(emb.embedding) for emb in embs])
+
             self.embedder = None
-            self.embeddings = np.array([np.array(emb['embedding']) for emb in embs])
+            self.embeddings = np.array(self.embeddings)
         else:
             self.embedder = SentenceTransformer(self.embedder_name)
             self.embeddings = self.embedder.encode(docs)
