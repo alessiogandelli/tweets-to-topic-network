@@ -6,7 +6,7 @@ import sys
 
 file_tweets = '/Users/alessiogandelli/data/cop23/cache/data/tweets_cop23.pkl'
 
-file_tweets = sys.argv[1]
+#file_tweets = sys.argv[1]
 
 print(file_tweets)
 
