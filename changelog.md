@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - what i am working on now
 
+## [0.1.4] - 2024-05-09
+### Changed 
+- if you do not have a openai api key does not give an error
+
 
 ## [0.1.3] - 2024-04-16
 

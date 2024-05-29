@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tweets-to-topic-network"
-version = "0.1.3"
+version = "0.1.4"
 description = "start from a set of tweets and create a multilayer network where each layer is a topic"
 authors = ["alessiogandelli <alessiogandelli99@gmail.com>"]
 readme = "README.md"
@@ -9,7 +9,7 @@ packages = [{include = "tweets_to_topic_network"}]
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
 jsonlines = "^4.0.0"
-pandas = "^2.2.2"
+pandas = "^2.2.1"
 sentence-transformers = "^2.6.1"
 bertopic = "^0.16.0"
 openai = "^1.17.0"
@@ -22,6 +22,7 @@ fastembed = "^0.2.6"
 umap-learn = "^0.5.6"
 langchain = "^0.1.16"
 flask = "^3.0.3"
+tiktoken = "^0.6.0"
 
 
 

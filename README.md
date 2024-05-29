@@ -186,7 +186,8 @@ df_labeled = tm.get_topics()
 
 ```
 ### label topics (todo)
-we use openai gpt3.5turbo model to label the topic using the putput of the cTFIDF and some representative tweets. 
+we use openai gpt3.5turbo model to label the topic using the putput of the cTFIDF and some representative tweets. if you want to use openai api, you need an env variable with the api key, otherwise it will not work. 
+OPENAI_API_KEY=sk-xxxxx
 
 ## Network Creator
 Finally we can create the networks using the full dataframe with topic labels. there are 3 possible types of network you can create

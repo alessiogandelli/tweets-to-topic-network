@@ -17,7 +17,11 @@ from bertopic.representation import OpenAI as BERTOpenAI
 
 from langchain.chains import LLMChain
 from openai import OpenAI
-openai_client = OpenAI()
+
+try:
+    openai_client = OpenAI()
+except:
+    openai_client = None
 
 
 
@@ -96,7 +100,6 @@ class Topic_modeler:
         self.df['new_text'] = self.df['text']
         self.df['new_text'] =  self.df['new_text'].str.replace(r"http\S+", "")
         self.df['new_text'] =  self.df['new_text'].str.replace(r"@\S+", "")
-        self.df['new_text'] =  self.df['new_text'].str.replace(r"#\S+", "")
         self.df['new_text'] =  self.df['new_text'].str.replace(r"\n", "")
         self.df['new_text'] =  self.df['new_text'].str.strip()
 
