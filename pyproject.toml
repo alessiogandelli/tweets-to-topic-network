@@ -7,9 +7,9 @@ readme = "README.md"
 packages = [{include = "tweets_to_topic_network"}]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.12"
+python = ">=3.10,<3.13"
 jsonlines = "^4.0.0"
-pandas = "^2.2.1"
+pandas = "^2.0"
 sentence-transformers = "^2.6.1"
 bertopic = "^0.16.0"
 openai = "^1.17.0"
@@ -23,6 +23,7 @@ umap-learn = "^0.5.6"
 langchain = "^0.1.16"
 flask = "^3.0.3"
 tiktoken = "^0.6.0"
+pipdeptree = "^2.22.0"
 
 
 

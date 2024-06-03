@@ -103,3 +103,8 @@ lang_distribution()
 
 
 # %%
+dfn = df[df['cop'] == 'cop21']
+
+dfn['referenced_type'].value_counts()
+
+# %%
