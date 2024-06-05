@@ -153,14 +153,19 @@ class Topic_modeler:
         vectorizer_model = CountVectorizer(stop_words="english") 
         # we can also change some parameter of the cTFIDF model https://maartengr.github.io/BERTopic/getting_started/ctfidf/ctfidf.html#reduce_frequent_words
         ctfidf_model = ClassTfidfTransformer(reduce_frequent_words=True)
-        representation_model = BERTOpenAI(openai_client, model="gpt-3.5-turbo", chat=True)
+
+        try:
+            representation_model = BERTOpenAI(openai_client, model="gpt-3.5-turbo", chat=True)
+        except:
+            representation_model = None
+            print('representation model not found')
 
         model = BERTopic( 
                             vectorizer_model =   vectorizer_model,
                             ctfidf_model      =   ctfidf_model,
                             nr_topics        =  'auto',
                             min_topic_size   =   max(int(len(docs)/800),10),
-                            representation_model = representation_model
+                           # representation_model = representation_model
                         )
         print('         model created')
         
