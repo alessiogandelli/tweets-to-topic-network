@@ -10,6 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - what i am working on now
 
+## [0.1.7] - 2024-06-05
+### Removed
+- removed representation model so it does not break the code if you do not have an openai api key
+
+## [0.1.6] - 2024-06-04
+### Changed
+- fix some dependencies versions
+
+## [0.1.5] - 2024-05-09
+### Removed
+- removed the removing of hashtags from the preprocessing 
+
 ## [0.1.4] - 2024-05-09
 ### Changed 
 - if you do not have a openai api key does not give an error
