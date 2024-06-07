@@ -2,3 +2,5 @@
 2) with scp send the files to the cluster 
 
 3) apptainer build container.sif recipe.def # build the container and create the sif file
+
+a
