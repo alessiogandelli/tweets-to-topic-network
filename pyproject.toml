@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tweets-to-topic-network"
-version = "0.1.6"
+version = "0.1.8"
 description = "start from a set of tweets and create a multilayer network where each layer is a topic"
 authors = ["alessiogandelli <alessiogandelli99@gmail.com>"]
 readme = "README.md"

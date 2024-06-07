@@ -10,13 +10,22 @@ from bertopic.vectorizers import ClassTfidfTransformer
 from qdrant_client import QdrantClient, models
 from fastembed import TextEmbedding
 import pickle 
-from umap import UMAP
+
 from langchain import PromptTemplate
 from langchain.llms import OpenAI as LLMOpenAI
 from bertopic.representation import OpenAI as BERTOpenAI
 
 from langchain.chains import LLMChain
 from openai import OpenAI
+
+try:
+    from cuml.cluster import HDBSCAN
+    from cuml.manifold import UMAP
+    umap_model = UMAP(n_components=5, n_neighbors=15, min_dist=0.0)
+    hdbscan_model = HDBSCAN(min_samples=10, gen_min_span_tree=True, prediction_data=True)
+except:
+    from umap import UMAP
+    print('cuml not found')
 
 try:
     openai_client = OpenAI()
@@ -165,6 +174,8 @@ class Topic_modeler:
                             ctfidf_model      =   ctfidf_model,
                             nr_topics        =  'auto',
                             min_topic_size   =   max(int(len(docs)/800),10),
+                            umap_model=umap_model,
+                            hdbscan_model=hdbscan_model,
                            # representation_model = representation_model
                         )
         print('         model created')

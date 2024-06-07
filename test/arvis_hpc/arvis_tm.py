@@ -48,7 +48,7 @@ def num_tokens_from_string(string: str, enc) -> int:
     num_tokens = len(enc.encode(string))
     return num_tokens
 
-num_tokens_from_string('mangiabanane', enc)
+num_tokens_from_string('crostocae', enc)
 # %%
 df['num_tokens'] = df['text'].apply(lambda x: num_tokens_from_string(x, enc))
 # %%
