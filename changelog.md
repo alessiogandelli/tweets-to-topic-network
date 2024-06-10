@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - what i am working on now
 
+##[0.1.9] - 2024-06-10
+
+### Added
+- set parameters of bertopic such as min topic size, number of topics, umap etc 
+
 ## [0.1.7] - 2024-06-05
 ### Removed
 - removed representation model so it does not break the code if you do not have an openai api key
