@@ -58,7 +58,7 @@ class Topic_modeler:
         self.docs = None
         
 
-    def get_topics(self):
+    def get_topics(self, min_topic_size = 50, nr_topics = 'auto', umap_model = None, hdbscan_model = None, representation_model = None):
         """
         Main function of the class, get the topics of the original tweets and updates the dataframe with the topics and topic probabilities. 
         then save the embeddings in qdrant and save the labeled dataframe in the cache folder.
@@ -90,7 +90,7 @@ class Topic_modeler:
             else:
                 self._get_embeddings(docs)
             print( '    ',datetime.datetime.now() - time, ' for embeddings')
-            self._use_BERTopic(docs)
+            self._use_BERTopic(docs, nr_topics, min_topic_size, umap_model, hdbscan_model, representation_model)
             print( '    ',datetime.datetime.now() - time, ' for bertopic')
             self._save_embeddings(docs)
             print( '    ',datetime.datetime.now() - time, ' for saving embeddings')
@@ -158,7 +158,7 @@ class Topic_modeler:
         with open(self.embeddings_path, 'wb') as f:
             pickle.dump(self.embeddings, f)
 
-    def _use_BERTopic(self, docs):
+    def _use_BERTopic(self, docs, nr_topics = 'auto', min_topic_size = 50, umap_model = None, hdbscan_model = None, representation_model = None):
         vectorizer_model = CountVectorizer(stop_words="english") 
         # we can also change some parameter of the cTFIDF model https://maartengr.github.io/BERTopic/getting_started/ctfidf/ctfidf.html#reduce_frequent_words
         ctfidf_model = ClassTfidfTransformer(reduce_frequent_words=True)
@@ -172,11 +172,11 @@ class Topic_modeler:
         model = BERTopic( 
                             vectorizer_model =   vectorizer_model,
                             ctfidf_model      =   ctfidf_model,
-                            nr_topics        =  'auto',
-                            min_topic_size   =   max(int(len(docs)/800),10),
+                            nr_topics        =  nr_topics,
+                            min_topic_size   =   min_topic_size,
                             umap_model=umap_model,
                             hdbscan_model=hdbscan_model,
-                           # representation_model = representation_model
+                            representation_model = representation_model
                         )
         print('         model created')
         
