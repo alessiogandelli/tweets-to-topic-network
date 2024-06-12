@@ -163,11 +163,11 @@ class Topic_modeler:
         # we can also change some parameter of the cTFIDF model https://maartengr.github.io/BERTopic/getting_started/ctfidf/ctfidf.html#reduce_frequent_words
         ctfidf_model = ClassTfidfTransformer(reduce_frequent_words=True)
 
-        try:
-            representation_model = BERTOpenAI(openai_client, model="gpt-3.5-turbo", chat=True)
-        except:
-            representation_model = None
-            print('representation model not found')
+        # try:
+        #     representation_model = BERTOpenAI(openai_client, model="gpt-3.5-turbo", chat=True)
+        # except:
+        #     representation_model = None
+        #     print('representation model not found')
 
         model = BERTopic( 
                             vectorizer_model =   vectorizer_model,
